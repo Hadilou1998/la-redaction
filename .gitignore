@@ -1,0 +1,26 @@
+# Configuration locale et secret à la racine
+/.env
+/.env.local
+
+# Symfony
+/api/vendor/
+/api/var/
+/api/.env.local
+/api/.env.local.php
+/api/.env.*.local
+/api/config/jwt/
+/api/.phpunit.cache/
+/api/.phpunit.result.cache
+
+# React
+/front/node_modules/
+/front/dist/
+/front/coverage/
+/front/.env
+/front/.env.local
+/front/.env.*.local
+
+# Editeurs et système
+/.idea/
+Thumbs.db
+.DS_Store

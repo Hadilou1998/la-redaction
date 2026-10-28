@@ -1,0 +1,35 @@
+# -----------------------------
+# Services
+# -----------------------------
+services:
+  database:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: la_redaction
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d la_redaction"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    volumes:
+      - ./api:/app
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+    command: ["sleep", "infinity"]
+
+volumes:
+  database_data:
