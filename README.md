@@ -7,9 +7,13 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Environnement Docker avec PHP 8.3 et PostgreSQL 16.
 - Symfony 7.4 LTS, API Platform 4 et Doctrine ORM installés.
 - Entité User créée et migration appliquée.
+- Authentification JWT avec LexikJWTAuthenticationBundle.
+- Route POST /api/login : connexion par email et mot de passe.
+- Route GET /api/me : profil de l'utilisateur connecté.
+- Trois comptes de démonstrations avec mots de passe hashés.
+- Serveur HTTP de développement accessible sur <http://127.0.0.1:8000>.
 
-L'authentification JWT, les fonctionnalités éditoriales, le front React
-et les tests restent à développer.
+Les fonctionnalités éditoriales, le front React et les tests restent à développer.
 
 ## Prérequis
 
@@ -53,13 +57,29 @@ Générer un secret local :
 docker-compose exec php php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
 ```
 
-Copier la valeur obtenue dans `APP_SECRET` du fichier `api/.env.local`.
+La renseigner dans `JWT_PASSPHRASE` du fichier `api/.env.local`.
+
+Générer les clés JWT :
+
+```powershell
+docker-compose exec php php bin/console lexik:jwt:generate-keypair --skip-if-exists
+```
+
+Les clés et les configurations locales sont ignorées par Git.
 
 Créer les tables :
 
 ```powershell
 docker-compose exec php php bin/console doctrine:migrations:migrate ou d:m:m
 ```
+
+Charger les comptes de démonstration :
+
+```powershell
+docker-compose exec php php bin/console doctrine:fixtures:load
+```
+
+Attention : cette commande supprime les données existantes avant de charger les fixtures.
 
 ## Vérifications
 
@@ -90,7 +110,14 @@ Les tests ne sont pas encore implémentés.
 
 ## Comptes de démonstration
 
-Aucun compte de démonstration n'est encore créé.
+| Profil | Email | Mot de passe |
+| --- | --- | --- |
+| Rédacteur en chef | `editor@example.test` | password123 |
+| Journaliste 1 | `journalist1@example.test` | password123 |
+| Journaliste 2 | `journalist2@example.test` | password123 |
+
+Ces identifiants sont publics et reservés au développement local.
+Les JWT expirent après 1 heure.
 
 ## Choix techniques
 

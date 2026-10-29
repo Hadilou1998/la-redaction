@@ -29,7 +29,7 @@ services:
     depends_on:
       database:
         condition: service_healthy
-    command: ["sleep", "infinity"]
+    command: ["php", "-S", "0.0.0.0:8000", "-t", "public", "public/index.php"]
 
 volumes:
   database_data:
