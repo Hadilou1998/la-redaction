@@ -17,13 +17,18 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Génération automatique du slug à la création.
 - Cinq rubriques de démonstration chargées par les fixtures.
 - Entité Article liée à un auteur et une rubrique, avec migration appliquée.
-- Quatre statuts définis pour une énumération PHP.
+- Quatre statuts définis par une énumération PHP.
 - Validation du titre, du chapô, du corps et de la rubrique.
 - Slugs des articles générés automatiquement et uniques en base.
 - Callbacks Doctrine pour initialiser et actualiser les dates.
 - Trente articles de démonstration dans des statuts variés.
+- Liste paginée et détail des articles accessibles via l'API.
+- Visiteurs : accès aux articles publiés uniquement.
+- Rédacteur en chef : accès à tous les articles.
+- Articles privés inaccessibles renvoyés en 404.
+- Données de l'auteur limitées à son identifiant et son nom affiché.
 
-Les opérations API des articles, leurs permissions et leurs transitions,
+Les écritures sur les articles, leurs transitions, les filtres de recherche,
 le front React et les tests automatisés restent à développer.
 
 ## Prérequis
@@ -121,9 +126,10 @@ Les données PostgreSQL sont conservées dans un volume Docker.
 Le serveur PHP intégré est utilisé uniquement pour le développement.
 L'API est accessible sur <http://127.0.0.1:8000>.
 
-Le modèle et les fixtures des articles sont créés.
-Les opérations API des articles, leurs permissions et leurs transitions,
-le front React et les tests automatisés restent à développer.
+La lecture des articles et le filtrage de leur visibilité sont implémentés.
+La création, la modification, la suppression, les transitions de statut,
+les filtres de recherche, le front React et les tests automatisés
+restent à développer.
 
 L'installation depuis un clone vierge reste à vérifier.
 
@@ -139,13 +145,26 @@ Vérifications manuelles effectuées pour les rubriques :
 - modification du nom avec conservation du slug ;
 - nom vide refusé : 422 ;
 - suppression : 204, puis consultation : 404 ;
-- chargement des cinq rubriques par les fixtures ;
+- chargement des cinq rubriques par les fixtures.
+
+Vérifications manuelles effectuées pour le modèle Article :
+
 - schéma PostgreSQL synchronisé avec les entités ;
 - chargement de 30 articles : 8 brouillons, 8 soumis, 7 publiés et 7 refusés ;
 - génération des slugs distincts pour deux titres identiques ;
-- cohérence des dat, des dates de publication et de motifs de refus.
+- cohérence des dates, des dates de publication et de motifs de refus.
 
-Les callbacks de dates et les validations restent à couvrir
+Vérifications manuelles de la visibilité des articles :
+
+- un visiteur voit uniquement les 7 articles publiés ;
+- un visiteur reçoit 404 sur un brouillon existant ;
+- l'auteur peut consulter son brouillon ;
+- un autre journaliste reçoit 404 sur ce même brouillon ;
+- le rédacteur en chef accède au brouillon et aux 30 articles ;
+- toutes les pages des deux journalistes ont été parcourues,
+  sans doublon ni article privé d'un autre auteur.
+
+Les callbacks de dates, les validations et les permissions restent à couvrir
 par des tests automatisés.
 
 ## Comptes de démonstration
@@ -190,6 +209,14 @@ Les callbacks Doctrine initialisent createdAt et updatedAt à la création,
 puis actualisent updatedAt lors d'une modification.
 Les fixtures peuvent fournir des dates historiques.
 
+Une extension Doctrine filtre les articles accessibles selon l'utilisateur,
+pour les listes comme pour les détails, avant la pagination.
+Un article inaccessible est exclu des résultats et sa consultation renvoie 404.
+
+Les groupes de sérialisation contrôlent les champs renvoyés.
+Le corps est réservé au détail ; l'auteur expose uniquement son identifiant
+et son nom affiché.
+
 ## Temps passé
 
-21h
+24h

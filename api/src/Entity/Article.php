@@ -7,14 +7,32 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use App\Enum\ArticleStatus;
 use Symfony\Component\Validator\Constraints as Assert;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(
+            normalizationContext: [
+                "groups" => ["article:read", "article:detail"],
+            ],
+        ),
+    ],
+    normalizationContext: ["groups" => ["article:read"]],
+    order: ["publishedAt" => "DESC", "id" => "DESC"],
+    paginationItemsPerPage: 10,
+)]
 class Article
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups("article:read")]
     private ?int $id = null;
 
     #[ORM\Column(length: 150)]
@@ -25,9 +43,11 @@ class Article
         minMessage: "Le titre doit contenir au moins {{ limit }} caractères.",
         maxMessage: "Le titre doit contenir au plus {{ limit }} caractères.",
     )]
+    #[Groups("article:read")]
     private ?string $title = null;
 
     #[ORM\Column(length: 180, unique: true)]
+    #[Groups("article:read")]
     private ?string $slug = null;
 
     #[ORM\Column(length: 300)]
@@ -35,6 +55,7 @@ class Article
         max: 300,
         maxMessage: "Le chapô ne doit pas dépasser {{ limit }} caractères.",
     )]
+    #[Groups("article:read")]
     private ?string $chapo = "";
 
     #[ORM\Column(type: Types::TEXT)]
@@ -42,30 +63,37 @@ class Article
         message: "Le corps de l'article est obligatoire.",
         normalizer: "trim",
     )]
+    #[Groups("article:detail")]
     private ?string $body = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $rejectionReason = null;
 
     #[ORM\Column]
+    #[Groups("article:read")]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column]
+    #[Groups("article:read")]
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups("article:read")]
     private ?\DateTimeImmutable $publishedAt = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups("article:read")]
     private ?User $author = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: "La rubrique est obligatoire.")]
+    #[Groups("article:read")]
     private ?Category $category = null;
 
     #[ORM\Column(length: 20, enumType: ArticleStatus::class)]
+    #[Groups("article:read")]
     private ArticleStatus $status = ArticleStatus::Draft;
 
     public function getId(): ?int

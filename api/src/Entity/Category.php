@@ -36,7 +36,7 @@ class Category
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['category:read'])]
+    #[Groups(['category:read', 'article:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100, unique: true)]
@@ -45,11 +45,11 @@ class Category
         max: 100,
         maxMessage: 'Le nom ne doit pas dépasser {{ limit }} caractères.',
     )]
-    #[Groups(['category:read', 'category:write'])]
+    #[Groups(['category:read', 'category:write', 'article:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 120, unique: true)]
-    #[Groups(['category:read'])]
+    #[Groups(['category:read', 'article:read'])]
     private ?string $slug = null;
 
     public function getId(): ?int
