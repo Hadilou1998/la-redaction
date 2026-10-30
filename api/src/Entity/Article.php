@@ -11,6 +11,8 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use Symfony\Component\Serializer\Attribute\Groups;
+use ApiPlatform\Metadata\Post;
+use App\State\ArticleCreateProcessor;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
@@ -21,6 +23,17 @@ use Symfony\Component\Serializer\Attribute\Groups;
             normalizationContext: [
                 "groups" => ["article:read", "article:detail"],
             ],
+        ),
+        new Post(
+            security: "is_granted('ROLE_JOURNALIST')",
+            normalizationContext: [
+                "groups" => ["article:read", "article:detail"],
+            ],
+            denormalizationContext: [
+                "groups" => ["article:write"],
+                "allow_extra_attributes" => false,
+            ],
+            processor: ArticleCreateProcessor::class,
         ),
     ],
     normalizationContext: ["groups" => ["article:read"]],
@@ -43,7 +56,7 @@ class Article
         minMessage: "Le titre doit contenir au moins {{ limit }} caractères.",
         maxMessage: "Le titre doit contenir au plus {{ limit }} caractères.",
     )]
-    #[Groups("article:read")]
+    #[Groups(["article:read", "article:write"])]
     private ?string $title = null;
 
     #[ORM\Column(length: 180, unique: true)]
@@ -55,7 +68,7 @@ class Article
         max: 300,
         maxMessage: "Le chapô ne doit pas dépasser {{ limit }} caractères.",
     )]
-    #[Groups("article:read")]
+    #[Groups(["article:read", "article:write"])]
     private ?string $chapo = "";
 
     #[ORM\Column(type: Types::TEXT)]
@@ -63,7 +76,7 @@ class Article
         message: "Le corps de l'article est obligatoire.",
         normalizer: "trim",
     )]
-    #[Groups("article:detail")]
+    #[Groups(["article:detail", "article:write"])]
     private ?string $body = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -89,7 +102,7 @@ class Article
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: "La rubrique est obligatoire.")]
-    #[Groups("article:read")]
+    #[Groups(["article:read", "article:write"])]
     private ?Category $category = null;
 
     #[ORM\Column(length: 20, enumType: ArticleStatus::class)]

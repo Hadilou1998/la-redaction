@@ -27,9 +27,14 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Rédacteur en chef : accès à tous les articles.
 - Articles privés inaccessibles renvoyés en 404.
 - Données de l'auteur limitées à son identifiant et son nom affiché.
+- Journalistes : accès aux articles publiés et à leurs propres articles privés.
+- Création d'un article réservée aux journalistes connectés.
+- Attribution automatique de l'auteur et du statut brouillon.
+- Refus des champs non autorisés dans les requêtes de création.
 
-Les écritures sur les articles, leurs transitions, les filtres de recherche,
-le front React et les tests automatisés restent à développer.
+La modification et la suppression des articles, les transitions de statut,
+les filtres de recherche, le front React et les tests automatisés
+restent à développer.
 
 ## Prérequis
 
@@ -126,8 +131,9 @@ Les données PostgreSQL sont conservées dans un volume Docker.
 Le serveur PHP intégré est utilisé uniquement pour le développement.
 L'API est accessible sur <http://127.0.0.1:8000>.
 
-La lecture des articles et le filtrage de leur visibilité sont implémentés.
-La création, la modification, la suppression, les transitions de statut,
+La lecture des articles, le filtrage de leur visibilité et la création
+de brouillons par les journalistes sont implémentés.
+La modification, la suppression, les transitions de statut,
 les filtres de recherche, le front React et les tests automatisés
 restent à développer.
 
@@ -135,7 +141,9 @@ L'installation depuis un clone vierge reste à vérifier.
 
 ## Tests
 
-Les tests ne sont pas encore implémentés.
+Les tests automatisés ne sont pas encore implémentés.
+Les nombres d'articles indiqués ci-dessous correspondent aux fixtures initiales,
+avant les créations effectuées pendant les vérifications manuelles.
 
 Vérifications manuelles effectuées pour les rubriques :
 
@@ -164,6 +172,17 @@ Vérifications manuelles de la visibilité des articles :
 - toutes les pages des deux journalistes ont été parcourues,
   sans doublon ni article privé d'un autre auteur.
 
+Vérifications manuelles de la création des articles :
+
+- création par un journaliste connecté : 201 ;
+- auteur connecté, statut brouillon, slug et dates attribués automatiquement ;
+- contenu complet présent dans la réponse de création ;
+- création sans connexion refusée : 401 ;
+- statut envoyé par le client refusé : 400 ;
+- titre trop court : 422 ;
+- contenu vide refusé : 422 ;
+- rubrique manquante refusée : 422 ;
+
 Les callbacks de dates, les validations et les permissions restent à couvrir
 par des tests automatisés.
 
@@ -175,7 +194,7 @@ par des tests automatisés.
 | Journaliste 1 | `journalist1@example.test` | password123 |
 | Journaliste 2 | `journalist2@example.test` | password123 |
 
-Ces identifiants sont publics et reservés au développement local.
+Ces identifiants sont publics et réservés au développement local.
 Les JWT expirent après 1 heure.
 
 ## Choix techniques
@@ -217,6 +236,16 @@ Les groupes de sérialisation contrôlent les champs renvoyés.
 Le corps est réservé au détail ; l'auteur expose uniquement son identifiant
 et son nom affiché.
 
+Un processor attribue automatiquement l'auteur connecté et impose
+le statut brouillon avant l'enregistrement par Doctrine.
+
+Seuls le titre, le chapô, le corps et la rubrique sont acceptés
+dans la requête de création grâce au groupe article:write.
+Les champs supplémentaires sont refusés.
+
+La réponse de création contient aussi le corps de l'article,
+comme la consultation du détail.
+
 ## Temps passé
 
-24h
+28h
