@@ -16,8 +16,15 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Validation du nom et unicité du nom et du slug.
 - Génération automatique du slug à la création.
 - Cinq rubriques de démonstration chargées par les fixtures.
+- Entité Article liée à un auteur et une rubrique, avec migration appliquée.
+- Quatre statuts définis pour une énumération PHP.
+- Validation du titre, du chapô, du corps et de la rubrique.
+- Slugs des articles générés automatiquement et uniques en base.
+- Callbacks Doctrine pour initialiser et actualiser les dates.
+- Trente articles de démonstration dans des statuts variés.
 
-Les fonctionnalités éditoriales, le front React et les tests restent à développer.
+Les opérations API des articles, leurs permissions et leurs transitions,
+le front React et les tests automatisés restent à développer.
 
 ## Prérequis
 
@@ -85,7 +92,8 @@ Créer les tables :
 docker compose exec php php bin/console doctrine:migrations:migrate
 ```
 
-Charger les utilisateurs et les rubriques de démonstration :
+Charger les trois utilisateurs, les cinq rubriques et les trente articles
+de démonstration :
 
 ```powershell
 docker compose exec php php bin/console doctrine:fixtures:load
@@ -113,8 +121,9 @@ Les données PostgreSQL sont conservées dans un volume Docker.
 Le serveur PHP intégré est utilisé uniquement pour le développement.
 L'API est accessible sur <http://127.0.0.1:8000>.
 
-Les articles, leurs règles métier, le front React et les tests automatisés
-restent à développer.
+Le modèle et les fixtures des articles sont créés.
+Les opérations API des articles, leurs permissions et leurs transitions,
+le front React et les tests automatisés restent à développer.
 
 L'installation depuis un clone vierge reste à vérifier.
 
@@ -130,7 +139,14 @@ Vérifications manuelles effectuées pour les rubriques :
 - modification du nom avec conservation du slug ;
 - nom vide refusé : 422 ;
 - suppression : 204, puis consultation : 404 ;
-- chargement des cinq rubriques par les fixtures.
+- chargement des cinq rubriques par les fixtures ;
+- schéma PostgreSQL synchronisé avec les entités ;
+- chargement de 30 articles : 8 brouillons, 8 soumis, 7 publiés et 7 refusés ;
+- génération des slugs distincts pour deux titres identiques ;
+- cohérence des dat, des dates de publication et de motifs de refus.
+
+Les callbacks de dates et les validations restent à couvrir
+par des tests automatisés.
 
 ## Comptes de démonstration
 
@@ -159,6 +175,21 @@ Un listener Doctrine génère le slug à la création, y compris pour les fixtur
 Le slug reste stable lorsque le nom change afin de conserver les URL.
 Les contraintes uniques PostgreSQL empêchent les doublons.
 
+### Articles
+
+Une énumération PHP définit les quatre statuts possibles :
+draft, submitted, published et rejected.
+Elle limite les valeurs possibles ; le contrôle des transitions reste à implémenter.
+
+Un listener Doctrine génère les slugs à partir des titres.
+Il vérifie les slugs existants et ceux réservés pendant le chargement en cours.
+Un suffixe permet de distinguer les articles portant le même titre.
+Le slug reste stable lorsque le titre change.
+
+Les callbacks Doctrine initialisent createdAt et updatedAt à la création,
+puis actualisent updatedAt lors d'une modification.
+Les fixtures peuvent fournir des dates historiques.
+
 ## Temps passé
 
-À renseigner au fur et à mesure du développement.
+21h
