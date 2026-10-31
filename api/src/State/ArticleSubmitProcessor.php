@@ -12,6 +12,7 @@ use App\Security\Voter\ArticleVoter;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
  * @implements ProcessorInterface<Article, Article>
@@ -38,6 +39,12 @@ final class ArticleSubmitProcessor implements ProcessorInterface
         if (!$this->security->isGranted(ArticleVoter::SUBMIT, $data)) {
             throw new AccessDeniedException(
                 "Vous ne pouvez pas soumettre cet article."
+            );
+        }
+
+        if ($data->getStatus() !== ArticleStatus::Draft) {
+            throw new UnprocessableEntityHttpException(
+                "Seul un article en brouillon peut être soumis."
             );
         }
 

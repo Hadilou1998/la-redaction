@@ -48,7 +48,6 @@ final class ArticleVoter extends Voter
                 $token,
                 ["ROLE_JOURNALIST"],
             )
-                && $article->getStatus() === ArticleStatus::Draft
                 && $user->getId() !== null
                 && $article->getAuthor()?->getId() === $user->getId();
         }

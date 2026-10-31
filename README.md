@@ -213,7 +213,7 @@ Vérifications manuelles de la soumission des articles :
 - passage au statut submitted et actualisation de updatedAt ;
 - conservation de l'auteur, du titre, du corps, du slug et de createdAt ;
 - absence de date de publication après soumission ;
-- deuxième soumission refusée : 403 ;
+- deuxième soumission refusée : 422 ;
 - modification par l'auteur après soumission refusée : 403 ;
 - article inchangé après ces refus ;
 - soumission du brouillon par un visiteur ou un autre journaliste : 404 ;
@@ -298,6 +298,21 @@ Cette action ne nécessite aucun corps JSON.
 L'article est chargé par le provider Doctrine avec filtrage de visibilité.
 L'option throwOnNotFound impose une réponse 404 si l'article est introuvable
 ou inaccessible, y compris sur cette opération POST.
+
+Pour la soumission, le Voter vérifie le rôle et l'identité de l'auteur.
+Le processor vérifie que l'article est en brouillon.
+Une transition de soumission invalide renvoie 422.
+
+## Priorités pour la suite
+
+Terminer les transitions obligatoires et les droits de suppression,
+puis ajouter les tests automatisés des droits et des transitions.
+Développer ensuite le front et les filtres, puis vérifier l'installation
+depuis un clone vierge.
+
+Avec davantage de temps, ajouter une intégration continue exécutant
+les tests et étudier le composant Workflow de Symfony pour centraliser
+les transitions de statut.
 
 ## Temps passé
 
