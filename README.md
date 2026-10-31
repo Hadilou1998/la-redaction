@@ -47,9 +47,11 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Reprise d'un article refusé réservée à son auteur journaliste.
 - Passage de rejected à draft via POST /api/articles/{id}/resume.
 - Motif de refus conservé et visible après la reprise.
+- Suppression d'un brouillon réservée à son auteur journaliste.
+- Suppression via DELETE /api/articles/{id}.
 
-La suppression des articles, les filtres de recherche,
-le front React et les tests automatisés restent à développer.
+Les filtres de recherche, le front React et les tests automatisés
+restent à développer.
 
 ## Prérequis
 
@@ -152,8 +154,7 @@ La modification est autorisée pour l'auteur d'un brouillon
 et pour le rédacteur en chef sur les articles soumis.
 L'auteur journaliste peut soumettre son brouillon pour validation.
 
-La suppression des articles et le retour en brouillon,
-les filtres de recherche, le front React et les tests automatisés
+Les filtres de recherche, le front React et les tests automatisés
 restent à développer.
 
 L'installation depuis un clone vierge reste à vérifier.
@@ -266,6 +267,16 @@ Vérifications manuelles de la reprise des articles :
 - reprise par le rédacteur en chef refusée : 403 ;
 - statut, motif et date de modification conservés après ces refus.
 
+Vérification manuelle de la suppression des articles :
+
+- suppression d'un brouillon par son auteur : 204 ;
+- consultation après suppression : 404 ;
+- suppression du brouillon par un visiteur ou un autre journaliste : 404 ;
+- suppression du brouillon par le rédacteur en chef : 403 ;
+- brouillon inchangé après les tentatives interdites ;
+- suppression de son article publié par un journaliste : 403 ;
+- article publié et dates conservés après cette tentative.
+
 Les callbacks de dates, les validations et les permissions restent à couvrir
 par des tests automatisés.
 
@@ -366,12 +377,14 @@ Le processor exige le statut rejected, puis applique le statut draft
 sans effacer le motif. Une transition invalide renvoie 422.
 Cette action ne nécessite aucun corps JSON.
 
+La suppression utilise la permission ARTICLE_DELETE du Voter
+et le mécanisme de suppression Doctrine fourni par API Platform.
+
 ## Priorités pour la suite
 
-Terminer les transitions obligatoires et les droits de suppression,
-puis ajouter les tests automatisés des droits et des transitions.
-Développer ensuite le front et les filtres, puis vérifier l'installation
-depuis un clone vierge.
+Ajouter les tests automatisés des droits et des transitions
+puis les filtres et le front React.
+Vérifier ensuite l'installation depuis un clone vierge.
 
 Avec davantage de temps, ajouter une intégration continue exécutant
 les tests et étudier le composant Workflow de Symfony pour centraliser

@@ -20,6 +20,7 @@ use App\State\ArticlePublishProcessor;
 use App\State\ArticleRejectProcessor;
 use ApiPlatform\Metadata\ApiProperty;
 use App\State\ArticleResumeProcessor;
+use ApiPlatform\Metadata\Delete;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
@@ -51,6 +52,9 @@ use App\State\ArticleResumeProcessor;
                 "groups" => ["article:write"],
                 "allow_extra_attributes" => false,
             ],
+        ),
+        new Delete(
+            security: "is_granted('ARTICLE_DELETE', object)",
         ),
         new Post(
             uriTemplate: "/articles/{id}/submit",
