@@ -44,10 +44,12 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Refus des articles soumis réservé au rédacteur en chef.
 - Passage de submitted à rejected via POST /api/articles/{id}/reject.
 - Motif de refus obligatoire, nettoyé et consultable par l'auteur.
+- Reprise d'un article refusé réservée à son auteur journaliste.
+- Passage de rejected à draft via POST /api/articles/{id}/resume.
+- Motif de refus conservé et visible après la reprise.
 
-La suppression des articles et le retour en brouillon,
-les filtres de recherche, le front React et les tests automatisés
-restent à développer.
+La suppression des articles, les filtres de recherche,
+le front React et les tests automatisés restent à développer.
 
 ## Prérequis
 
@@ -253,6 +255,17 @@ Vérifications manuelles du refus des articles :
 - refus par le journaliste auteur d'un article soumis : 403 ;
 - article soumis inchangé après cette tentative interdite.
 
+Vérifications manuelles de la reprise des articles :
+
+- reprise d'un article refusé par son auteur : 200 ;
+- retour au statut draft et motif conservé et visible ;
+- conservation de l'auteur, du titre, du corps, du slug et de createdAt ;
+- actualisation de updatedAt et absence de date de publication ;
+- deuxième reprise refusée : 422 ;
+- reprise par un visiteur ou un autre journaliste : 404 ;
+- reprise par le rédacteur en chef refusée : 403 ;
+- statut, motif et date de modification conservés après ces refus.
+
 Les callbacks de dates, les validations et les permissions restent à couvrir
 par des tests automatisés.
 
@@ -290,7 +303,8 @@ draft, submitted, published et rejected.
 Elle limite les valeurs possibles.
 Les transitions de draft vers submitted, submitted vers published
 et submitted vers rejected sont implémentées.
-Le retour de rejected vers draft reste à développer.
+La transition de rejected vers draft permet à l'auteur de reprendre
+un article refusé pour le corriger, tout en conservant le motif visible.
 
 Un listener Doctrine génère les slugs à partir des titres.
 Il vérifie les slugs existants et ceux réservés pendant le chargement en cours.
@@ -346,6 +360,12 @@ Le motif est modifiable uniquement par l'opération de refus.
 Dans le détail, sa consultation est réservée à l'auteur et au rédacteur
 en chef grâce à une condition de sécurité sur la propriété.
 
+La reprise utilise la permission ARTICLE_RESUME du Voter.
+Le Voter contrôle le rôle journaliste et l'identité de l'auteur.
+Le processor exige le statut rejected, puis applique le statut draft
+sans effacer le motif. Une transition invalide renvoie 422.
+Cette action ne nécessite aucun corps JSON.
+
 ## Priorités pour la suite
 
 Terminer les transitions obligatoires et les droits de suppression,
@@ -359,4 +379,4 @@ les transitions de statut.
 
 ## Temps passé
 
-42h
+44h

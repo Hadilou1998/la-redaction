@@ -19,6 +19,7 @@ use ApiPlatform\Doctrine\Orm\State\ItemProvider;
 use App\State\ArticlePublishProcessor;
 use App\State\ArticleRejectProcessor;
 use ApiPlatform\Metadata\ApiProperty;
+use App\State\ArticleResumeProcessor;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
@@ -100,6 +101,19 @@ use ApiPlatform\Metadata\ApiProperty;
             deserialize: true,
             provider: ItemProvider::class,
             processor: ArticleRejectProcessor::class,
+        ),
+        new Post(
+            uriTemplate: "/articles/{id}/resume",
+            status: 200,
+            security: "is_granted('ARTICLE_RESUME', object)",
+            normalizationContext: [
+                "groups" => ["article:read", "article:detail"],
+            ],
+            read: true,
+            throwOnNotFound: true,
+            deserialize: false,
+            provider: ItemProvider::class,
+            processor: ArticleResumeProcessor::class,
         ),
     ],
     normalizationContext: ["groups" => ["article:read"]],
