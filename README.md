@@ -49,9 +49,12 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Motif de refus conservé et visible après la reprise.
 - Suppression d'un brouillon réservée à son auteur journaliste.
 - Suppression via DELETE /api/articles/{id}.
+- Neuf tests API automatisés avec PHPUnit et ApiTestCase.
+- Base PostgreSQL dédiée aux tests.
+- Annulation des modifications de chaque test avec DAMADoctrineTestBundle.
 
-Les filtres de recherche, le front React et les tests automatisés
-restent à développer.
+Les filtres de recherche, le front React et les tests front
+restent à développer. La couverture des tests API reste à compléter.
 
 ## Prérequis
 
@@ -154,12 +157,62 @@ La modification est autorisée pour l'auteur d'un brouillon
 et pour le rédacteur en chef sur les articles soumis.
 L'auteur journaliste peut soumettre son brouillon pour validation.
 
-Les filtres de recherche, le front React et les tests automatisés
-restent à développer.
+Les filtres de recherche, le front React et les tests front
+restent à développer. La couverture des tests API reste à compléter.
 
 L'installation depuis un clone vierge reste à vérifier.
 
 ## Tests
+
+### Tests API automatisés
+
+Les tests utilisent PHPUnit et ApiTestCase d'API Platform.
+Ils s'exécutent dans l'environnement test sur la base la_redaction_test.
+
+Après l'installation du projet et la génération des clés JWT,
+créer api/.env.test.local avec DATABASE_URL et JWT_PASSPHRASE,
+en reprenant les valeurs locales utilisées pendant l'installation.
+Reprendre également les chemins JWT si ceux-ci ont été personnalisés.
+
+DATABASE_URL doit conserver le nom la_redaction :
+Doctrine ajoute automatiquement le suffixe _test.
+Le fichier api/.env.test.local est ignoré par Git.
+
+Préparer la base de test :
+
+```powershell
+docker compose exec php php bin/console doctrine:database:create --env=test --if-not-exists
+docker compose exec php php bin/console doctrine:migrations:migrate --env=test --no-interaction
+docker compose exec php php bin/console doctrine:fixtures:load --env=test --no-interaction
+```
+
+Le chargement des fixtures supprime les données de la base de test.
+
+Lance tous les tests :
+
+```powershell
+docker compose exec php php bin/phpunit
+```
+
+Résultat vérifié : 9 tests, 134 assertions.
+
+Les tests couvrent :
+
+- La lecture publique des articles publiés et les champs exposés ;
+- La réponse 404 sur un brouillon consulté par un visiteur ;
+- La soumission d'un brouillon par son auteur ;
+- La publication d'un article soumis par le rédacteur ;
+- Le refus de publication par un journaliste ;
+- Le refus de publication directe d'un brouillon ;
+- Le refus d'un article soumis avec motif nettoyé et visible par l'auteur ;
+- La reprise d'un article refusé avec conservation du motif ;
+- Le refus d'une deuxième reprise ;
+- La suppression d'un brouillon par son auteur.
+
+DAMADoctrineTestBundle annule les modifications après chaque test.
+Les tests retrouvent les articles sans dépendre de leurs identifiants numériques.
+Les messages de journalisation des réponses 403, 404 et 422 attendues
+ne constituent pas des échecs de test.
 
 Vérifications manuelles de la publication des articles :
 
@@ -175,7 +228,6 @@ Vérifications manuelles de la publication des articles :
 - publication par le journaliste auteur d'un article soumis refusée : 403 ;
 - article soumis inchangé après ce refus.
 
-Les tests automatisés ne sont pas encore implémentés.
 Les nombres d'articles indiqués ci-dessous correspondent aux fixtures initiales,
 avant les créations effectuées pendant les vérifications manuelles.
 
@@ -277,8 +329,8 @@ Vérification manuelle de la suppression des articles :
 - suppression de son article publié par un journaliste : 403 ;
 - article publié et dates conservés après cette tentative.
 
-Les callbacks de dates, les validations et les permissions restent à couvrir
-par des tests automatisés.
+La couverture automatisée reste à compléter, notamment pour la création,
+la modification, les validations et les autres combinaisons de permissions.
 
 ## Comptes de démonstration
 
@@ -382,9 +434,9 @@ et le mécanisme de suppression Doctrine fourni par API Platform.
 
 ## Priorités pour la suite
 
-Ajouter les tests automatisés des droits et des transitions
-puis les filtres et le front React.
-Vérifier ensuite l'installation depuis un clone vierge.
+Ajouter les filtres et développer le front React avec ses tests.
+Compléter la couverture des tests API et vérifier l'installation
+depuis un clone vierge.
 
 Avec davantage de temps, ajouter une intégration continue exécutant
 les tests et étudier le composant Workflow de Symfony pour centraliser
@@ -392,4 +444,4 @@ les transitions de statut.
 
 ## Temps passé
 
-44h
+48h
