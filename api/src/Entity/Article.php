@@ -13,6 +13,7 @@ use ApiPlatform\Metadata\GetCollection;
 use Symfony\Component\Serializer\Attribute\Groups;
 use ApiPlatform\Metadata\Post;
 use App\State\ArticleCreateProcessor;
+use ApiPlatform\Metadata\Patch;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
@@ -34,6 +35,16 @@ use App\State\ArticleCreateProcessor;
                 "allow_extra_attributes" => false,
             ],
             processor: ArticleCreateProcessor::class,
+        ),
+        new Patch(
+            security: "is_granted('ARTICLE_EDIT', object)",
+            normalizationContext: [
+                "groups" => ["article:read", "article:detail"],
+            ],
+            denormalizationContext: [
+                "groups" => ["article:write"],
+                "allow_extra_attributes" => false,
+            ],
         ),
     ],
     normalizationContext: ["groups" => ["article:read"]],

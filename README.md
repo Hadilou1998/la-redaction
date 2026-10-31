@@ -31,8 +31,11 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Création d'un article réservée aux journalistes connectés.
 - Attribution automatique de l'auteur et du statut brouillon.
 - Refus des champs non autorisés dans les requêtes de création.
+- Modification des brouillons réservée à leur auteur journaliste.
+- Modification des articles soumis réservée au rédacteur en chef.
+- Permissions de modification centralisées dans un Voter.
 
-La modification et la suppression des articles, les transitions de statut,
+La suppression des articles, les transitions de statut,
 les filtres de recherche, le front React et les tests automatisés
 restent à développer.
 
@@ -133,7 +136,10 @@ L'API est accessible sur <http://127.0.0.1:8000>.
 
 La lecture des articles, le filtrage de leur visibilité et la création
 de brouillons par les journalistes sont implémentés.
-La modification, la suppression, les transitions de statut,
+La modification est autorisée pour l'auteur d'un brouillon
+et pour le rédacteur en chef sur les articles soumis.
+
+La suppression, les transitions de statut,
 les filtres de recherche, le front React et les tests automatisés
 restent à développer.
 
@@ -181,7 +187,21 @@ Vérifications manuelles de la création des articles :
 - statut envoyé par le client refusé : 400 ;
 - titre trop court : 422 ;
 - contenu vide refusé : 422 ;
-- rubrique manquante refusée : 422 ;
+- rubrique manquante refusée : 422.
+
+Vérifications manuelles de la modification des articles :
+
+- modification d'un brouillon par son auteur : 200 ;
+- conservation du slug, de l'auteur, du statut et de la date de création ;
+- actualisation de la date de modification ;
+- modification du brouillon par un autre journaliste refusée : 404 ;
+- statut envoyé par l'auteur refusé : 400 ;
+- titre vide refusé : 422 ;
+- absence de modification persistée après ces refus ;
+- modification d'un article soumis par le rédacteur en chef : 200 ;
+- modification d'un article publié ou d'un brouillon par le rédacteur
+  en chef refusée : 403 ;
+- modification d'un article soumis par son auteur refusée : 403.
 
 Les callbacks de dates, les validations et les permissions restent à couvrir
 par des tests automatisés.
@@ -246,6 +266,13 @@ Les champs supplémentaires sont refusés.
 La réponse de création contient aussi le corps de l'article,
 comme la consultation du détail.
 
+L'opération PATCH utilise un Voter pour vérifier les permissions
+avant d'appliquer les modifications.
+Un journaliste peut modifier uniquement ses propres brouillons.
+Le rédacteur en chef peut modifier uniquement les articles soumis.
+Les champs modifiables sont le titre, le chapô, le corps et la rubrique.
+Les champs supplémentaires sont refusés.
+
 ## Temps passé
 
-28h
+36h
