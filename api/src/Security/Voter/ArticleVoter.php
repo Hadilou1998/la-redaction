@@ -15,6 +15,7 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 final class ArticleVoter extends Voter
 {
     public const EDIT = "ARTICLE_EDIT";
+    public const SUBMIT = "ARTICLE_SUBMIT";
 
     public function __construct(
         private readonly AccessDecisionManagerInterface $accessDecisionManager,
@@ -23,7 +24,8 @@ final class ArticleVoter extends Voter
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return $attribute === self::EDIT && $subject instanceof Article;
+        return in_array($attribute, [self::EDIT, self::SUBMIT], true)
+            && $subject instanceof Article;
     }
 
     protected function voteOnAttribute(
@@ -40,6 +42,16 @@ final class ArticleVoter extends Voter
 
         /** @var Article $article */
         $article = $subject;
+
+        if ($attribute === self::SUBMIT) {
+            return $this->accessDecisionManager->decide(
+                $token,
+                ["ROLE_JOURNALIST"],
+            )
+                && $article->getStatus() === ArticleStatus::Draft
+                && $user->getId() !== null
+                && $article->getAuthor()?->getId() === $user->getId();
+        }
 
         if ($this->accessDecisionManager->decide($token, ["ROLE_EDITOR"])) {
             return $article->getStatus() === ArticleStatus::Submitted;

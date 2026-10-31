@@ -34,8 +34,11 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Modification des brouillons réservée à leur auteur journaliste.
 - Modification des articles soumis réservée au rédacteur en chef.
 - Permissions de modification centralisées dans un Voter.
+- Soumission d'un brouillon réservée à son auteur journaliste.
+- Passage de draft à submitted via POST /api/articles/{id}/submit.
+- Après soumission, le journaliste ne peut plus modifier l'article.
 
-La suppression des articles, les transitions de statut,
+La suppression des articles, la publication, le refus et le retour en brouillon,
 les filtres de recherche, le front React et les tests automatisés
 restent à développer.
 
@@ -138,8 +141,9 @@ La lecture des articles, le filtrage de leur visibilité et la création
 de brouillons par les journalistes sont implémentés.
 La modification est autorisée pour l'auteur d'un brouillon
 et pour le rédacteur en chef sur les articles soumis.
+L'auteur journaliste peut soumettre son brouillon pour validation.
 
-La suppression, les transitions de statut,
+La suppression des articles, la publication, le refus et le retour en brouillon,
 les filtres de recherche, le front React et les tests automatisés
 restent à développer.
 
@@ -203,6 +207,18 @@ Vérifications manuelles de la modification des articles :
   en chef refusée : 403 ;
 - modification d'un article soumis par son auteur refusée : 403.
 
+Vérifications manuelles de la soumission des articles :
+
+- soumission d'un brouillon par son auteur : 200 ;
+- passage au statut submitted et actualisation de updatedAt ;
+- conservation de l'auteur, du titre, du corps, du slug et de createdAt ;
+- absence de date de publication après soumission ;
+- deuxième soumission refusée : 403 ;
+- modification par l'auteur après soumission refusée : 403 ;
+- article inchangé après ces refus ;
+- soumission du brouillon par un visiteur ou un autre journaliste : 404 ;
+- soumission du brouillon par le rédacteur en chef refusée : 403.
+
 Les callbacks de dates, les validations et les permissions restent à couvrir
 par des tests automatisés.
 
@@ -237,7 +253,9 @@ Les contraintes uniques PostgreSQL empêchent les doublons.
 
 Une énumération PHP définit les quatre statuts possibles :
 draft, submitted, published et rejected.
-Elle limite les valeurs possibles ; le contrôle des transitions reste à implémenter.
+Elle limite les valeurs possibles.
+La transition de draft vers submitted est implémentée ;
+les autres transitions restent à implémenter.
 
 Un listener Doctrine génère les slugs à partir des titres.
 Il vérifie les slugs existants et ceux réservés pendant le chargement en cours.
@@ -272,6 +290,14 @@ Un journaliste peut modifier uniquement ses propres brouillons.
 Le rédacteur en chef peut modifier uniquement les articles soumis.
 Les champs modifiables sont le titre, le chapô, le corps et la rubrique.
 Les champs supplémentaires sont refusés.
+
+La soumission utilise un processor et la permission ARTICLE_SUBMIT du Voter.
+Seul l'auteur journaliste peut soumettre son article au statut draft.
+Cette action ne nécessite aucun corps JSON.
+
+L'article est chargé par le provider Doctrine avec filtrage de visibilité.
+L'option throwOnNotFound impose une réponse 404 si l'article est introuvable
+ou inaccessible, y compris sur cette opération POST.
 
 ## Temps passé
 

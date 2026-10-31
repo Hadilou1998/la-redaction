@@ -14,6 +14,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use ApiPlatform\Metadata\Post;
 use App\State\ArticleCreateProcessor;
 use ApiPlatform\Metadata\Patch;
+use App\State\ArticleSubmitProcessor;
+use ApiPlatform\Doctrine\Orm\State\ItemProvider;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
@@ -45,6 +47,19 @@ use ApiPlatform\Metadata\Patch;
                 "groups" => ["article:write"],
                 "allow_extra_attributes" => false,
             ],
+        ),
+        new Post(
+            uriTemplate: "/articles/{id}/submit",
+            status: 200,
+            security: "is_granted('ARTICLE_SUBMIT', object)",
+            normalizationContext: [
+                "groups" => ["article:read", "article:detail"],
+            ],
+            read: true,
+            throwOnNotFound: true,
+            deserialize: false,
+            provider: ItemProvider::class,
+            processor: ArticleSubmitProcessor::class,
         ),
     ],
     normalizationContext: ["groups" => ["article:read"]],
