@@ -41,8 +41,11 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Passage de submitted à published via POST /api/articles/{id}/publish.
 - Date de publication attribuée automatiquement.
 - Article accessible sans connexion après publication.
+- Refus des articles soumis réservé au rédacteur en chef.
+- Passage de submitted à rejected via POST /api/articles/{id}/reject.
+- Motif de refus obligatoire, nettoyé et consultable par l'auteur.
 
-La suppression des articles, le refus et le retour en brouillon,
+La suppression des articles et le retour en brouillon,
 les filtres de recherche, le front React et les tests automatisés
 restent à développer.
 
@@ -147,7 +150,7 @@ La modification est autorisée pour l'auteur d'un brouillon
 et pour le rédacteur en chef sur les articles soumis.
 L'auteur journaliste peut soumettre son brouillon pour validation.
 
-La suppression des articles, la publication, le refus et le retour en brouillon,
+La suppression des articles et le retour en brouillon,
 les filtres de recherche, le front React et les tests automatisés
 restent à développer.
 
@@ -237,6 +240,19 @@ Vérifications manuelles de la soumission des articles :
 - soumission du brouillon par un visiteur ou un autre journaliste : 404 ;
 - soumission du brouillon par le rédacteur en chef refusée : 403.
 
+Vérifications manuelles du refus des articles :
+
+- refus d'un article soumis par le rédacteur en chef : 200 ;
+- passage du statut rejected et motif enregistré sans espaces autour ;
+- absence de date de publication ;
+- consultation du motif par l'auteur dans le détail de l'article ;
+- motif absent, vide ou composé d'espaces refusé : 422 ;
+- deuxième refus d'un article déjà refusé : 422 ;
+- refus d'un brouillon ou d'un article publié : 422 ;
+- motif initial conservé après une deuxième tentative de refus ;
+- refus par le journaliste auteur d'un article soumis : 403 ;
+- article soumis inchangé après cette tentative interdite.
+
 Les callbacks de dates, les validations et les permissions restent à couvrir
 par des tests automatisés.
 
@@ -272,8 +288,9 @@ Les contraintes uniques PostgreSQL empêchent les doublons.
 Une énumération PHP définit les quatre statuts possibles :
 draft, submitted, published et rejected.
 Elle limite les valeurs possibles.
-Les transitions de draft vers submitted et de submitted vers published
-sont implémentées. Le refus et le retour en brouillon restent à développer.
+Les transitions de draft vers submitted, submitted vers published
+et submitted vers rejected sont implémentées.
+Le retour de rejected vers draft reste à développer.
 
 Un listener Doctrine génère les slugs à partir des titres.
 Il vérifie les slugs existants et ceux réservés pendant le chargement en cours.
@@ -321,6 +338,14 @@ Pour la soumission, le Voter vérifie le rôle et l'identité de l'auteur.
 Le processor vérifie que l'article est en brouillon.
 Une transition de soumission invalide renvoie 422.
 
+Le refus utilise la permission ARTICLE_REJECT du Voter.
+Le processor vérifie le statut submitted, nettoie le motif obligatoire
+et applique le statut rejected. Une transition invalide renvoie 422.
+
+Le motif est modifiable uniquement par l'opération de refus.
+Dans le détail, sa consultation est réservée à l'auteur et au rédacteur
+en chef grâce à une condition de sécurité sur la propriété.
+
 ## Priorités pour la suite
 
 Terminer les transitions obligatoires et les droits de suppression,
@@ -334,4 +359,4 @@ les transitions de statut.
 
 ## Temps passé
 
-39h
+42h

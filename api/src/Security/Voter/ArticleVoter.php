@@ -17,6 +17,7 @@ final class ArticleVoter extends Voter
     public const EDIT = "ARTICLE_EDIT";
     public const SUBMIT = "ARTICLE_SUBMIT";
     public const PUBLISH = "ARTICLE_PUBLISH";
+    public const REJECT = "ARTICLE_REJECT";
 
     public function __construct(
         private readonly AccessDecisionManagerInterface $accessDecisionManager,
@@ -27,7 +28,7 @@ final class ArticleVoter extends Voter
     {
         return in_array(
             $attribute,
-            [self::EDIT, self::SUBMIT, self::PUBLISH],
+            [self::EDIT, self::SUBMIT, self::PUBLISH, self::REJECT],
             true,
         ) && $subject instanceof Article;
     }
@@ -47,7 +48,7 @@ final class ArticleVoter extends Voter
         /** @var Article $article */
         $article = $subject;
 
-        if ($attribute === self::PUBLISH) {
+        if (in_array($attribute, [self::PUBLISH, self::REJECT], true)) {
             return $this->accessDecisionManager->decide(
                 $token,
                 ["ROLE_EDITOR"],

@@ -17,6 +17,8 @@ use ApiPlatform\Metadata\Patch;
 use App\State\ArticleSubmitProcessor;
 use ApiPlatform\Doctrine\Orm\State\ItemProvider;
 use App\State\ArticlePublishProcessor;
+use App\State\ArticleRejectProcessor;
+use ApiPlatform\Metadata\ApiProperty;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
@@ -75,6 +77,30 @@ use App\State\ArticlePublishProcessor;
             provider: ItemProvider::class,
             processor: ArticlePublishProcessor::class,
         ),
+        new Post(
+            uriTemplate: "/articles/{id}/reject",
+            status: 200,
+            security: "is_granted('ARTICLE_REJECT', object)",
+            normalizationContext: [
+                "groups" => [
+                    "article:read",
+                    "article:detail",
+                    "article:reject",
+                ],
+            ],
+            denormalizationContext: [
+                "groups" => ["article:reject"],
+                "allow_extra_attributes" => false,
+            ],
+            validationContext: [
+                "groups" => ["Default", "article:reject"],
+            ],
+            read: true,
+            throwOnNotFound: true,
+            deserialize: true,
+            provider: ItemProvider::class,
+            processor: ArticleRejectProcessor::class,
+        ),
     ],
     normalizationContext: ["groups" => ["article:read"]],
     order: ["publishedAt" => "DESC", "id" => "DESC"],
@@ -120,6 +146,15 @@ class Article
     private ?string $body = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(["article:detail", "article:reject"])]
+    #[ApiProperty(
+        security: "is_granted('ROLE_EDITOR') or (user != null and object.getAuthor() == user)",
+    )]
+    #[Assert\NotBlank(
+        message: "Le motif de refus est obligatoire.",
+        normalizer: "trim",
+        groups: ["article:reject"],
+    )]
     private ?string $rejectionReason = null;
 
     #[ORM\Column]
