@@ -37,8 +37,12 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Soumission d'un brouillon réservée à son auteur journaliste.
 - Passage de draft à submitted via POST /api/articles/{id}/submit.
 - Après soumission, le journaliste ne peut plus modifier l'article.
+- Publication des articles soumis réservée au rédacteur en chef.
+- Passage de submitted à published via POST /api/articles/{id}/publish.
+- Date de publication attribuée automatiquement.
+- Article accessible sans connexion après publication.
 
-La suppression des articles, la publication, le refus et le retour en brouillon,
+La suppression des articles, le refus et le retour en brouillon,
 les filtres de recherche, le front React et les tests automatisés
 restent à développer.
 
@@ -151,6 +155,20 @@ L'installation depuis un clone vierge reste à vérifier.
 
 ## Tests
 
+Vérifications manuelles de la publication des articles :
+
+- publication d'un article soumis par le rédacteur en chef : 200 ;
+- passage du statut published et date de publication renseignée ;
+- conservation de l'auteur, du titre, du corps, du slug et de createdAt ;
+- actualisation de updatedAt ;
+- consultation sans connexion après publication ;
+- deuxième publication refusée : 422 ;
+- publication directe d'un brouillon refusée : 422 ;
+- dates de l'article publié conservées après ces refus ;
+- brouillon resté non publié après la tentative refusée ;
+- publication par le journaliste auteur d'un article soumis refusée : 403 ;
+- article soumis inchangé après ce refus.
+
 Les tests automatisés ne sont pas encore implémentés.
 Les nombres d'articles indiqués ci-dessous correspondent aux fixtures initiales,
 avant les créations effectuées pendant les vérifications manuelles.
@@ -254,8 +272,8 @@ Les contraintes uniques PostgreSQL empêchent les doublons.
 Une énumération PHP définit les quatre statuts possibles :
 draft, submitted, published et rejected.
 Elle limite les valeurs possibles.
-La transition de draft vers submitted est implémentée ;
-les autres transitions restent à implémenter.
+Les transitions de draft vers submitted et de submitted vers published
+sont implémentées. Le refus et le retour en brouillon restent à développer.
 
 Un listener Doctrine génère les slugs à partir des titres.
 Il vérifie les slugs existants et ceux réservés pendant le chargement en cours.
@@ -316,4 +334,4 @@ les transitions de statut.
 
 ## Temps passé
 
-36h
+39h

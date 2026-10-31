@@ -16,6 +16,7 @@ final class ArticleVoter extends Voter
 {
     public const EDIT = "ARTICLE_EDIT";
     public const SUBMIT = "ARTICLE_SUBMIT";
+    public const PUBLISH = "ARTICLE_PUBLISH";
 
     public function __construct(
         private readonly AccessDecisionManagerInterface $accessDecisionManager,
@@ -24,8 +25,11 @@ final class ArticleVoter extends Voter
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return in_array($attribute, [self::EDIT, self::SUBMIT], true)
-            && $subject instanceof Article;
+        return in_array(
+            $attribute,
+            [self::EDIT, self::SUBMIT, self::PUBLISH],
+            true,
+        ) && $subject instanceof Article;
     }
 
     protected function voteOnAttribute(
@@ -42,6 +46,13 @@ final class ArticleVoter extends Voter
 
         /** @var Article $article */
         $article = $subject;
+
+        if ($attribute === self::PUBLISH) {
+            return $this->accessDecisionManager->decide(
+                $token,
+                ["ROLE_EDITOR"],
+            );
+        }
 
         if ($attribute === self::SUBMIT) {
             return $this->accessDecisionManager->decide(

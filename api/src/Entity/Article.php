@@ -16,6 +16,7 @@ use App\State\ArticleCreateProcessor;
 use ApiPlatform\Metadata\Patch;
 use App\State\ArticleSubmitProcessor;
 use ApiPlatform\Doctrine\Orm\State\ItemProvider;
+use App\State\ArticlePublishProcessor;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
@@ -60,6 +61,19 @@ use ApiPlatform\Doctrine\Orm\State\ItemProvider;
             deserialize: false,
             provider: ItemProvider::class,
             processor: ArticleSubmitProcessor::class,
+        ),
+        new Post(
+            uriTemplate: "/articles/{id}/publish",
+            status: 200,
+            security: "is_granted('ARTICLE_PUBLISH', object)",
+            normalizationContext: [
+                "groups" => ["article:read", "article:detail"],
+            ],
+            read: true,
+            throwOnNotFound: true,
+            deserialize: false,
+            provider: ItemProvider::class,
+            processor: ArticlePublishProcessor::class,
         ),
     ],
     normalizationContext: ["groups" => ["article:read"]],
