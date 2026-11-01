@@ -54,15 +54,19 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Annulation des modifications de chaque test avec DAMADoctrineTestBundle.
 - Filtrage des articles par rubrique, statut et recherche partielle sur le titre.
 - Tri des articles par date de publication, dans les deux sens.
+- Socle front React 19 avec Vite et TypeScript en mode strict.
+- ESLint configuré pour le front.
+- Proxy de développement transmettant les requêtes /api à Symfony.
+- Compilation et lint du front vérifiés.
 
-Le front React et les tests front restent à développer.
-La couverture des tests API reste à compléter.
+Les écrans et les fonctionnalités du front ainsi que les tests front
+restent à développer. La couverture des tests API reste à compléter.
 
 ## Prérequis
 
 - Docker Desktop démarré avec les conteneurs.
 - Git.
-- Node.js et npm pour le futur front React.
+- Node.js 22.22.0 et npm 10.9.4 : versions utilisées pour le front.
 
 ## Installation
 
@@ -133,6 +137,26 @@ docker compose exec php php bin/console doctrine:fixtures:load
 
 Attention : cette commande supprime les données existantes avant de charger les fixtures.
 
+## Démarrage du front
+
+Après l'installation de l'API, ouvrir un deuxième terminal depuis
+la racine du dépôt :
+
+```powershell
+cd front
+npm ci
+npm run dev
+```
+
+Le front est accessible sur <http://localhost:5173>.
+Garder ce terminal ouvert pendant le développement.
+
+Vite transmet les requêtes commençant par `/api` à Symfony sur
+<http://127.0.0.1:8000>. Les conteneurs de l'API doivent être démarrés.
+
+Le proxy est réservé au développement. Le déploiement du front compilé
+nécessitera une configuration du routage vers l'API.
+
 ## Vérifications
 
 ```powershell
@@ -140,7 +164,21 @@ docker compose exec php php bin/console about
 docker compose exec php php bin/console doctrine:schema:validate
 ```
 
+Depuis le dossier `front`, vérifier TypeScript, la compilation et ESLint :
+
+```powershell
+npm run build
+npm run lint
+```
+
+La communication avec l'API a été vérifiée par une requête sur
+`http://localhost:5173/api/articles` : seuls les articles publiés
+sont renvoyés sans authentification.
+
 ## Arrêt
+
+Arrêter le serveur Vite avec `Ctrl+C` dans son terminal.
+Depuis la racine du dépôt, arrêter ensuite les conteneurs :
 
 ```powershell
 docker compose down
@@ -159,8 +197,8 @@ La modification est autorisée pour l'auteur d'un brouillon
 et pour le rédacteur en chef sur les articles soumis.
 L'auteur journaliste peut soumettre son brouillon pour validation.
 
-Le front React et les tests front restent à développer.
-La couverture des tests API reste à compléter.
+Les écrans et les fonctionnalités du front ainsi que les tests front
+restent à développer. La couverture des tests API reste à compléter.
 
 L'installation depuis un clone vierge reste à vérifier.
 
@@ -379,7 +417,18 @@ Les JWT expirent après 1 heure.
 - Docker permet d'exécuter PHP et PostgreSQL sans installation locale.
 - Doctrine gère la persistance et les migrations de la base.
 - API Platform expose les ressources et contrôle leurs opérations.
-- React sera développé dans le dossier front.
+- React 19 est installé dans le dossier front avec Vite.
+- TypeScript en mode strict vérifie les types pendant la compilation.
+- ESLint vérifie le code du front.
+
+TypeScript utilise la version 5.9.3 pour respecter la compatibilité
+avec typescript-eslint. Le fichier package-lock.json conserve les versions
+résolues des dépendances.
+
+L'audit npm signale actuellement 12 alertes modérées dans la chaîne
+de développement ESLint, liées à minimatch. L'audit avec omission des
+dépendances de développement ne signale aucune vulnérabilité.
+Ces alertes restent à traiter avec une mise à jour compatible.
 
 Les visiteurs peuvent consulter les rubriques pour filtrer les articles.
 La création, la modification et la suppression nécessitent ROLE_EDITOR.
@@ -472,8 +521,9 @@ et le mécanisme de suppression Doctrine fourni par API Platform.
 
 ## Priorités pour la suite
 
-Développer le front React et ses tests, compléter la couverture des tests
-API et vérifier la procédure d'installation sur une machine vierge.
+Développer les écrans du front et leur connexion à l'API, ajouter les tests
+front, compléter la couverture des tests API et vérifier la procédure
+d'installation sur une machine vierge.
 
 Avec davantage de temps, ajouter une intégration continue exécutant
 les tests et étudier le composant Workflow de Symfony pour centraliser
@@ -481,4 +531,4 @@ les transitions de statut.
 
 ## Temps passé
 
-55h
+57h
