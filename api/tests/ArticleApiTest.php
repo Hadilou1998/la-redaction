@@ -275,6 +275,216 @@ final class ArticleApiTest extends ApiTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    public function testVisitorCannotExposeDraftUsingStatusFilter(): void
+    {
+        $client = static::createClient();
+
+        $response = $client->request("GET", "/api/articles?status=draft", [
+            "headers" => ["Accept" => "application/ld+json"],
+        ]);
+
+        self::assertResponseStatusCodeSame(200);
+
+        $data = $response->toArray();
+
+        self::assertSame(0, $data["totalItems"]);
+        self::assertSame([], $data["member"]);
+    }
+
+    public function testVisitorCanCombineArticleFilters(): void
+    {
+        $client = static::createClient();
+
+        $entityManager = static::getContainer()->get(
+            EntityManagerInterface::class,
+        );
+
+        $published = $entityManager->getRepository(Article::class)->findOneBy([
+            "status" => ArticleStatus::Published,
+        ]);
+
+        self::assertInstanceOf(Article::class, $published);
+
+        $category = $published->getCategory();
+        self::assertNotNull($category);
+
+        // Une partie du titre garantit qu'au moins cet article correspond
+        $term = mb_substr($published->getTitle(), 0, 10);
+        $categoryIri = "/api/categories/".$category->getId();
+
+        $expectedCount = 0;
+
+        $candidates = $entityManager->getRepository(Article::class)->findBy([
+            "status" => ArticleStatus::Published,
+            "category" => $category,
+        ]);
+
+        foreach ($candidates as $candidate) {
+            if (mb_strpos($candidate->getTitle(), $term) !== false) {
+                $expectedCount++;
+            }
+        }
+
+        $query = http_build_query([
+            "category" => $categoryIri,
+            "status" => "published",
+            "title" => $term,
+        ]);
+
+        $response = $client->request("GET", "/api/articles?".$query, [
+            "headers" => ["Accept" => "application/ld+json"],
+        ]);
+
+        self::assertResponseStatusCodeSame(200);
+
+        $data = $response->toArray();
+
+        self::assertGreaterThan(0, $expectedCount);
+        self::assertSame($expectedCount, $data["totalItems"]);
+        self::assertNotEmpty($data["member"]);
+
+        foreach ($data["member"] as $article) {
+            self::assertSame("published", $article["status"]);
+            self::assertSame($categoryIri, $article["category"]["@id"]);
+            self::assertNotFalse(mb_strpos($article["title"], $term));
+        }
+    }
+
+    public function testVisitorCanSortPublishedArticles(): void
+    {
+        $client = static::createClient();
+
+        $entityManager = static::getContainer()->get(
+            EntityManagerInterface::class,
+        );
+
+        $expectedCount = $entityManager->getRepository(Article::class)->count([
+            "status" => ArticleStatus::Published,
+        ]);
+
+        self::assertGreaterThan(1, $expectedCount);
+
+        foreach (["asc", "desc"] as $direction) {
+            $articles = [];
+            $page = 1;
+
+            do {
+                $query = http_build_query([
+                    "order" => ["publishedAt" => $direction],
+                    "page" => $page,
+                ]);
+
+                $response = $client->request("GET", "/api/articles?".$query, [
+                    "headers" => ["Accept" => "application/ld+json"],
+                ]);
+
+                self::assertResponseStatusCodeSame(200);
+                $data = $response->toArray();
+
+                self::assertSame($expectedCount, $data["totalItems"]);
+                self::assertNotEmpty($data["member"]);
+
+                array_push($articles, ...$data["member"]);
+                $page++;
+            } while (
+                count($articles) < $expectedCount
+                && $data["member"] !== []
+            );
+
+            self::assertCount($expectedCount, $articles);
+            self::assertCount(
+                $expectedCount,
+                array_unique(array_column($articles, "id")),
+            );
+
+            foreach ($articles as $article) {
+                self::assertSame("published", $article["status"]);
+                self::assertNotEmpty($article["publishedAt"]);
+            }
+
+            for ($i = 1; $i < count($articles); $i++) {
+                $previous = new \DateTimeImmutable(
+                    $articles[$i - 1]["publishedAt"]
+                );
+                $current = new \DateTimeImmutable(
+                    $articles[$i]["publishedAt"]
+                );
+
+                if ($direction === "asc") {
+                    self::assertTrue($previous <= $current);
+                } else {
+                    self::assertTrue($previous >= $current);
+                }
+            }
+        }
+    }
+
+    public function testJournalistSeesOnlyOwnDraftsWhenFiltering(): void
+    {
+        $client = static::createClient();
+        $email = "journalist1@example.test";
+        $token = $this->login($client, $email);
+
+        $entityManager = static::getContainer()->get(
+            EntityManagerInterface::class,
+        );
+
+        $author = $entityManager->getRepository(User::class)->findOneBy([
+            "email" => $email,
+        ]);
+
+        self::assertInstanceOf(User::class, $author);
+        $authorId = $author->getId();
+
+        $expectedArticles = $entityManager->getRepository(Article::class)->findBy([
+            "status" => ArticleStatus::Draft,
+            "author" => $author,
+        ]);
+
+        $expectedIds = array_map(
+            static fn (Article $article): int => $article->getId(),
+            $expectedArticles,
+        );
+
+        self::assertNotEmpty($expectedIds);
+
+        $actualIds = [];
+        $page = 1;
+
+        do {
+            $response = $client->request(
+                "GET",
+                "/api/articles?status=draft&page=".$page,
+                [
+                    "auth_bearer" => $token,
+                    "headers" => ["Accept" => "application/ld+json"],
+                ],
+            );
+
+            self::assertResponseStatusCodeSame(200);
+            $data = $response->toArray();
+
+            self::assertSame(count($expectedIds), $data["totalItems"]);
+            self::assertNotEmpty($data["member"]);
+
+            foreach ($data["member"] as $article) {
+                self::assertSame("draft", $article["status"]);
+                self::assertSame($authorId, $article["author"]["id"]);
+                $actualIds[] = $article["id"];
+            }
+
+            $page++;
+        } while (
+            count($actualIds) < count($expectedIds)
+            && $data["member"] !== []
+        );
+
+        sort($expectedIds);
+        sort($actualIds);
+
+        self::assertSame($expectedIds, $actualIds);
+    }
+
     private function login(Client $client, string $email): string
     {
         $response = $client->request("POST", "/api/login", [

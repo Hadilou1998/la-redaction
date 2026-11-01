@@ -21,12 +21,40 @@ use App\State\ArticleRejectProcessor;
 use ApiPlatform\Metadata\ApiProperty;
 use App\State\ArticleResumeProcessor;
 use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\QueryParameter;
+use ApiPlatform\Doctrine\Orm\Filter\ExactFilter;
+use ApiPlatform\Doctrine\Orm\Filter\IriFilter;
+use ApiPlatform\Doctrine\Orm\Filter\PartialSearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SortFilter;
 
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(),
+        new GetCollection(
+            parameters: [
+                "category" => new QueryParameter(
+                    property: "category",
+                    filter: new IriFilter(),
+                ),
+                "status" => new QueryParameter(
+                    property: "status",
+                    filter: new ExactFilter(),
+                    schema: [
+                        "type" => "string",
+                        "enum" => ["draft", "submitted", "published", "rejected"],
+                    ],
+                ),
+                "title" => new QueryParameter(
+                    property: "title",
+                    filter: new PartialSearchFilter(),
+                ),
+                "order[publishedAt]" => new QueryParameter(
+                    property: "publishedAt",
+                    filter: new SortFilter(),
+                ),
+            ],
+        ),
         new Get(
             normalizationContext: [
                 "groups" => ["article:read", "article:detail"],

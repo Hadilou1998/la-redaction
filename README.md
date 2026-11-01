@@ -49,12 +49,14 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Motif de refus conservé et visible après la reprise.
 - Suppression d'un brouillon réservée à son auteur journaliste.
 - Suppression via DELETE /api/articles/{id}.
-- Neuf tests API automatisés avec PHPUnit et ApiTestCase.
+- Treize tests API automatisés avec PHPUnit et ApiTestCase.
 - Base PostgreSQL dédiée aux tests.
 - Annulation des modifications de chaque test avec DAMADoctrineTestBundle.
+- Filtrage des articles par rubrique, statut et recherche partielle sur le titre.
+- Tri des articles par date de publication, dans les deux sens.
 
-Les filtres de recherche, le front React et les tests front
-restent à développer. La couverture des tests API reste à compléter.
+Le front React et les tests front restent à développer.
+La couverture des tests API reste à compléter.
 
 ## Prérequis
 
@@ -157,10 +159,35 @@ La modification est autorisée pour l'auteur d'un brouillon
 et pour le rédacteur en chef sur les articles soumis.
 L'auteur journaliste peut soumettre son brouillon pour validation.
 
-Les filtres de recherche, le front React et les tests front
-restent à développer. La couverture des tests API reste à compléter.
+Le front React et les tests front restent à développer.
+La couverture des tests API reste à compléter.
 
 L'installation depuis un clone vierge reste à vérifier.
+
+## Filtre et tri des articles
+
+La collection `GET /api/articles` accepte les paramètres suivants :
+
+| Paramètre | Description | Exemple |
+| --- | --- | --- |
+| `category` | Filtrage par IRI de rubrique | `category=/api/categories/1` |
+| `status` | Filtrage par statut | `status=published` |
+| `title` | Recherche partielle sur le titre | `title=article` |
+| `order[publishedAt]` | Tri par date de publication | `order[publishedAt]=desc` |
+| `page` | Page actuelle | `page=2` |
+
+Les paramètres peuvent être combinés. Par exemple :
+
+`GET /api/articles?status=published&title=article&order%5BpublishedAt%5D=desc`
+
+Les filtres respectent les droits de visibilité : un visiteur ne peut
+consulter que les articles publiés, même en demandant un autre statut.
+Un journaliste peut consulter les articles publiés et ses propres articles
+privés. Le rédacteur en chef peut consulter tous les articles.
+
+Sans paramètre de tri, les articles sont ordonnés par date de publication
+décroissante, puis par identifiant décroissant. La pagination contient
+10 articles par page.
 
 ## Tests
 
@@ -194,7 +221,7 @@ Lance tous les tests :
 docker compose exec php php bin/phpunit
 ```
 
-Résultat vérifié : 9 tests, 134 assertions.
+Résultat vérifié : 13 tests, 226 assertions.
 
 Les tests couvrent :
 
@@ -207,7 +234,11 @@ Les tests couvrent :
 - Le refus d'un article soumis avec motif nettoyé et visible par l'auteur ;
 - La reprise d'un article refusé avec conservation du motif ;
 - Le refus d'une deuxième reprise ;
-- La suppression d'un brouillon par son auteur.
+- La suppression d'un brouillon par son auteur ;
+- Filtrage public sur le statut brouillon sans divulgation d'articles privés ;
+- Combinaison des filtres par rubrique, statut et titre ;
+- Tri chronologique et antéchronologique sur l'ensemble des pages ;
+- Filtrage des brouillons d'un journaliste limité à ses propres articles.
 
 DAMADoctrineTestBundle annule les modifications après chaque test.
 Les tests retrouvent les articles sans dépendre de leurs identifiants numériques.
@@ -359,6 +390,13 @@ Un listener Doctrine génère le slug à la création, y compris pour les fixtur
 Le slug reste stable lorsque le nom change afin de conserver les URL.
 Les contraintes uniques PostgreSQL empêchent les doublons.
 
+Les filtres utilisent les paramètres `QueryParameter` d'API Platform et
+les filtres Doctrine intégrés : `IriFilter`, `ExactFilter`,
+`PartialSearchFilter` et `SortFilter`. Cela évite une implémentation
+spécifique pour les recherches courantes. Les restrictions de visibilité
+sont appliquées à la requête avant la pagination, afin que les résultats
+et le total annoncé respectent les droits de l'utilisateur.
+
 ### Articles
 
 Une énumération PHP définit les quatre statuts possibles :
@@ -434,9 +472,8 @@ et le mécanisme de suppression Doctrine fourni par API Platform.
 
 ## Priorités pour la suite
 
-Ajouter les filtres et développer le front React avec ses tests.
-Compléter la couverture des tests API et vérifier l'installation
-depuis un clone vierge.
+Développer le front React et ses tests, compléter la couverture des tests
+API et vérifier la procédure d'installation sur une machine vierge.
 
 Avec davantage de temps, ajouter une intégration continue exécutant
 les tests et étudier le composant Workflow de Symfony pour centraliser
@@ -444,4 +481,4 @@ les transitions de statut.
 
 ## Temps passé
 
-48h
+55h
