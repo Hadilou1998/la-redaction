@@ -58,9 +58,17 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - ESLint configuré pour le front.
 - Proxy de développement transmettant les requêtes /api à Symfony.
 - Compilation et lint du front vérifiés.
+- Liste publique des articles affichée dans le front.
+- Affichage du titre, du chapô, de la rubrique, de l'auteur et de la date.
+- Chargement des données avec TanStack Query.
+- États de chargement, d'erreurs et de liste vide implémentés.
+- Boutons de pagination prévus pour parcourir les résultats.
+- Deux tests front automatisés avec Vitest et React Testing Library.
+- Liste vide et navigation entre les pages vérifiées par les tests.
 
-Les écrans et les fonctionnalités du front ainsi que les tests front
-restent à développer. La couverture des tests API reste à compléter.
+La liste publique des articles est affichée dans le front.
+Les autres écrans et les fonctionnalités de gestion du front restent
+à développer. La couverture des tests API et front reste à compléter.
 
 ## Prérequis
 
@@ -197,8 +205,8 @@ La modification est autorisée pour l'auteur d'un brouillon
 et pour le rédacteur en chef sur les articles soumis.
 L'auteur journaliste peut soumettre son brouillon pour validation.
 
-Les écrans et les fonctionnalités du front ainsi que les tests front
-restent à développer. La couverture des tests API reste à compléter.
+Les autres écrans et les fonctionnalités de gestion du front restent
+à développer. La couverture des tests API et front reste à compléter.
 
 L'installation depuis un clone vierge reste à vérifier.
 
@@ -398,8 +406,46 @@ Vérification manuelle de la suppression des articles :
 - suppression de son article publié par un journaliste : 403 ;
 - article publié et dates conservés après cette tentative.
 
+Vérification manuelle de la liste publique du front :
+
+- affichage des articles publiés avec leurs informations ;
+- accents et dates affichés correctement ;
+- boutons de pagination désactivés lorsque la liste tient sur une page ;
+- message d'erreur affiché lorsque l'API est arrêtée ;
+- récupération des articles après redémarrage de l'API et nouvelle tentative.
+
 La couverture automatisée reste à compléter, notamment pour la création,
 la modification, les validations et les autres combinaisons de permissions.
+
+### Tests front automatisés
+
+Les tests utilisent Vitest 4.1 et React Testing Library, avec jsdom
+pour simuler l'environnement du navigateur.
+
+Depuis le dossier `front`, lancer les tests :
+
+```powershell
+npm test
+```
+
+Pour relancer automatiquement les tests pendant le développement :
+
+```powershell
+npm run test:watch
+```
+
+Résultat vérifié : 2 tests réussis.
+
+Les tests couvrent :
+
+- l'affichage du message de liste vide et la désactivation des boutons ;
+- le passage à la page suivante et le retour à la page précédente ;
+- la présence du numéro de page et l'appel API pour la deuxième page.
+
+Les réponses HTTP sont simulées. Ces tests ne nécessitent pas le démarrage
+de Symfony et ne modifient pas la base de données.
+
+La compilation TypeScript et le lint ont également été vérifiés avec `npm run build` et `npm run lint`.
 
 ## Comptes de démonstration
 
@@ -421,14 +467,20 @@ Les JWT expirent après 1 heure.
 - TypeScript en mode strict vérifie les types pendant la compilation.
 - ESLint vérifie le code du front.
 
+TanStack Query gère le chargement, le cache et les erreurs des appels API.
+La page courante fait partie de la clé de requête pour distinguer les
+résultats de pagination. Les appels HTTP sont regroupés dans
+`front/src/api/articles.ts` et utilisent le proxy Vite en développement.
+
 TypeScript utilise la version 5.9.3 pour respecter la compatibilité
 avec typescript-eslint. Le fichier package-lock.json conserve les versions
 résolues des dépendances.
 
-L'audit npm signale actuellement 12 alertes modérées dans la chaîne
-de développement ESLint, liées à minimatch. L'audit avec omission des
-dépendances de développement ne signale aucune vulnérabilité.
-Ces alertes restent à traiter avec une mise à jour compatible.
+Lors de l'installation initiale du front, l'audit npm signalait
+12 alertes modérées dans la chaîne ESLint, liées à minimatch.
+À cette étape, l'audit sans les dépendances de développement ne signalait
+aucune vulnérabilité. L'audit reste à actualiser après l'ajout
+des outils de test.
 
 Les visiteurs peuvent consulter les rubriques pour filtrer les articles.
 La création, la modification et la suppression nécessitent ROLE_EDITOR.
@@ -521,8 +573,8 @@ et le mécanisme de suppression Doctrine fourni par API Platform.
 
 ## Priorités pour la suite
 
-Développer les écrans du front et leur connexion à l'API, ajouter les tests
-front, compléter la couverture des tests API et vérifier la procédure
+Développer les autres écrans du front et leurs interactions avec l'API,
+compléter la couverture des tests API et front, puis vérifier la procédure
 d'installation sur une machine vierge.
 
 Avec davantage de temps, ajouter une intégration continue exécutant
@@ -531,4 +583,4 @@ les transitions de statut.
 
 ## Temps passé
 
-57h
+65h
