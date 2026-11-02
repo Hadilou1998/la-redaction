@@ -63,13 +63,17 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Chargement des données avec TanStack Query.
 - États de chargement, d'erreurs et de liste vide implémentés.
 - Boutons de pagination prévus pour parcourir les résultats.
-- Quatre tests front automatisés avec Vitest et React Testing Library.
+- Cinq tests front automatisés avec Vitest et React Testing Library.
 - Liste vide, pagination, contenu complet d'un article et réponse 404 vérifiées.
 - Navigation entre la liste et le détail avec React Router.
 - Titres des articles cliquables vers /articles/{id}.
 - Affichage du corps complet dans la page de détail.
 - Message commun pour les articles introuvables ou inaccessibles.
 - Lien de retour à la liste depuis le détail.
+- Recherche par titre et filtrage par rubrique dans la liste publique.
+- Tri par date de publication dans les deux sens.
+- Application et réinitialisation des filtres avec retour à la première page.
+- Chargement des rubriques depuis l'API.
 
 La liste publique et le détail des articles publiés sont affichés
 dans le front. Les autres écrans et les fonctionnalités de gestion
@@ -211,10 +215,9 @@ La modification est autorisée pour l'auteur d'un brouillon
 et pour le rédacteur en chef sur les articles soumis.
 L'auteur journaliste peut soumettre son brouillon pour validation.
 
-Le front permet actuellement de consulter la liste et le détail
-des articles publiés sans connexion. Les filtres et le tri sont
-disponibles dans l'API, mais leurs contrôles dans l'interface restent
-à développer.
+Le front permet de consulter la liste et le détail des articles publiés
+sans connexion. La liste propose une recherche par titre, un filtre
+par rubrique et un tri par date de publication.
 
 Les autres écrans et les fonctionnalités de gestion du front restent
 à développer. La couverture des tests API et front reste à compléter.
@@ -425,6 +428,14 @@ Vérification manuelle de la liste publique du front :
 - message d'erreur affiché lorsque l'API est arrêtée ;
 - récupération des articles après redémarrage de l'API et nouvelle tentative.
 
+Vérification manuelle des filtres dans le front :
+
+- recherche par titre avec affichage du résultat correspondant ;
+- filtrage par rubrique avec affichage des articles de Culture ;
+- tri par date de publication dans les deux sens ;
+- réinitialisation de la recherche, de la rubrique et du tri ;
+- retour à la liste des articles publiés après réinitialisation.
+
 Vérification manuelle du détail des articles dans le front :
 
 - ouverture du détail d'un article publié ;
@@ -454,7 +465,7 @@ Pour relancer automatiquement les tests pendant le développement :
 npm run test:watch
 ```
 
-Résultat vérifié : 4 tests réussis.
+Résultat vérifié : 5 tests réussis.
 
 Les tests couvrent :
 
@@ -463,7 +474,10 @@ Les tests couvrent :
 - la présence du numéro de page et l'appel API pour la deuxième page ;
 - L'affichage du contenu complet d'un article publié ;
 - L'affichage du message « Article introuvable ou inaccessible. »
-  lorsque l'API répond 404.
+  lorsque l'API répond 404 ;
+- L'envoi combiné du titre, de la rubrique et du tri à l'API ;
+- Le retour à la première page lors de l'application des filtres ;
+- La réinitialisation des champs et le retour à la liste initiale.
 
 Les réponses de l'API sont simulées dans ces tests. Ces tests ne nécessitent pas le démarrage
 de Symfony et ne modifient pas la base de données.
@@ -491,9 +505,16 @@ Les JWT expirent après 1 heure.
 - ESLint vérifie le code du front.
 
 TanStack Query gère le chargement, le cache et les erreurs des appels API.
-La page courante fait partie de la clé de requête pour distinguer les
-résultats de pagination. Les appels HTTP sont regroupés dans
-`front/src/api/articles.ts` et utilisent le proxy Vite en développement.
+La page courante et les filtres appliqués font partie de la clé de requête
+pour distinguer les résultats.
+
+Les champs du formulaire sont appliqués avec le bouton « Appliquer ».
+L'application ou la réinitialisation des filtres ramène à la première page.
+Les rubriques sont récupérées depuis l'API, en parcourant leur pagination.
+
+Les appels HTTP sont regroupés dans `front/src/api/articles.ts`.
+Les paramètres sont encodés avec URLSearchParams et les requêtes utilisent
+le proxy Vite en développement.
 
 React Router associe la liste à `/` et le détail à `/articles/:id`.
 Les deux pages sont séparées dans `ArticleListPage.tsx` et

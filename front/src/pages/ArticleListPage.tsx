@@ -1,14 +1,24 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import { getPublicArticles } from '../api/articles'
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { Link } from "react-router-dom"
+import { getCategories, getPublicArticles } from "../api/articles"
+import type { PublicArticleFilters } from "../api/articles"
 
-const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
-  dateStyle: 'long',
+const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
+  dateStyle: "long",
 })
 
 function ArticleListPage() {
   const [page, setPage] = useState(1)
+  const [title, setTitle] = useState("")
+  const [category, setCategory] = useState("")
+  const [order, setOrder] = useState<"asc" | "desc">("desc")
+  const [filters, setFilters] = useState<PublicArticleFilters>({})
+
+  const categoriesQuery = useQuery({
+    queryKey: ["categories"],
+    queryFn: ({ signal }) => getCategories(signal),
+   })
 
   const {
     data,
@@ -18,8 +28,8 @@ function ArticleListPage() {
     isFetching,
     refetch,
   } = useQuery({
-    queryKey: ['public-articles', page],
-    queryFn: ({ signal }) => getPublicArticles(page, signal),
+    queryKey: ["public-articles", page, filters],
+    queryFn: ({ signal }) => getPublicArticles(page, signal, filters),
   })
 
   return (
@@ -29,6 +39,92 @@ function ArticleListPage() {
         <h1>Les derniers articles</h1>
         <p>Retrouvez les publications de notre rédaction.</p>
       </header>
+
+      <form
+        className="article-filters"
+        onSubmit={(event) => {
+          event.preventDefault()
+          setPage(1)
+          setFilters({
+            title: title.trim(),
+            category,
+            order,
+          })
+        }}
+      >
+        <div>
+          <label htmlFor="article-title">Rechercher dans le titre</label>
+          <input
+            id="article-title"
+            type="search"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="article-category">Rubrique</label>
+          <select
+            id="article-category"
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            disabled={categoriesQuery.isPending || categoriesQuery.isError}
+          >
+            <option value="">Toutes les rubriques</option>
+            {categoriesQuery.data?.map((item) => (
+              <option key={item.id} value={item["@id"]}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="article-order">Date de publication</label>
+          <select
+            id="article-order"
+            value={order}
+            onChange={(event) => {
+              setOrder(event.target.value === "asc" ? "asc" : "desc")
+            }}
+          >
+            <option value="desc">Plus récents d'abord</option>
+            <option value="asc">Plus anciens d'abord</option>
+          </select>
+        </div>
+
+        <button type="submit">Appliquer</button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setTitle("")
+            setCategory("")
+            setOrder("desc")
+            setFilters({})
+            setPage(1)
+          }}
+        >
+          Réinitialiser
+        </button>
+      </form>
+
+      {categoriesQuery.isPending && (
+        <p role="status">Chargement des rubriques...</p>
+      )}
+
+      {categoriesQuery.isError && (
+        <section role="alert">
+          <p>{categoriesQuery.error.message}</p>
+          <button
+            type="button"
+            onClick={() => void categoriesQuery.refetch()}
+            disabled={categoriesQuery.isFetching}
+          >
+            Réessayer de charger les rubriques
+          </button>
+        </section>
+      )}
 
       {isPending && (
         <p role="status">Chargement des articles...</p>
@@ -42,7 +138,7 @@ function ArticleListPage() {
             onClick={() => void refetch()}
             disabled={isFetching}
           >
-            {isFetching ? 'Chargement...' : 'Essayer à nouveau'}
+            {isFetching ? "Chargement..." : "Essayer à nouveau"}
           </button>
         </section>
       )}
@@ -51,8 +147,8 @@ function ArticleListPage() {
         <>
           <p role="status">
             {data.totalItems} article
-            {data.totalItems > 1 ? 's' : ''} publié
-            {data.totalItems > 1 ? 's' : ''}
+            {data.totalItems > 1 ? "s" : ""} publié
+            {data.totalItems > 1 ? "s" : ""}
           </p>
 
           {data.member.length === 0 ? (

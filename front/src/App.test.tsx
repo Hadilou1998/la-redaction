@@ -58,12 +58,18 @@ describe('Liste publique des articles', () => {
     it('affiche un message lorsque la liste est vide', async () => {
         vi.stubGlobal(
             'fetch',
-            vi.fn().mockResolvedValue(
-                jsonResponse({
+            vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+                const url = new URL(String(input), 'http://localhost')
+
+                if (url.pathname === '/api/categories') {
+                    return jsonResponse({ member: [] })
+                }
+
+                return jsonResponse({
                     totalItems: 0,
                     member: [],
-                }),
-            ),
+                })
+            }),
         )
 
         renderApp()
@@ -101,6 +107,10 @@ describe('Liste publique des articles', () => {
         const fetchMock = vi.fn(
             async (input: RequestInfo | URL) => {
                 const url = new URL(String(input), 'http://localhost')
+
+                if (url.pathname === '/api/categories') {
+                    return jsonResponse({ member: [] })
+                }
 
                 return jsonResponse(
                     url.searchParams.get('page') === '2'
@@ -155,4 +165,105 @@ describe('Liste publique des articles', () => {
             screen.getByRole('button', { name: 'Précédent' }),
         ).toBeDisabled()
     })
+})
+
+it("affiche les filtres depuis la page 2 puis les réinitialise", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), 'http://localhost')
+
+        if (url.pathname === '/api/categories') {
+            return jsonResponse({
+                member: [{
+                    '@id': '/api/categories/1',
+                    id: 1,
+                    name: 'Culture',
+                    slug: 'culture',
+                }]
+            })
+        }
+
+        const filtered = url.searchParams.get('title')
+        const page = url.searchParams.get('page')
+
+        if (filtered) {
+            return jsonResponse({
+                totalItems: 1,
+                member: [article(3, "Culture et cinéma")],
+            })
+        }
+
+        return jsonResponse({
+            totalItems: 2,
+            member: [
+                article(
+                    page === '2' ? 2 : 1,
+                    page === '2' ? 'Article page deux' : 'Article page une',
+                )
+            ],
+            view: page === '2'
+                ? { previous: '/api/articles?page=1' }
+                : { next: '/api/articles?page=2' }
+        })
+    })
+
+    vi.stubGlobal('fetch', fetchMock)
+    renderApp()
+
+    await screen.findByRole('heading', { name: 'Article page une' })
+    await screen.findByRole('option', { name: 'Culture' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Suivant' }))
+    await screen.findByRole('heading', { name: 'Article page deux' })
+    expect(screen.getByText('Page 2')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Rechercher dans le titre'), {
+        target: { value: ' cinéma ' },
+    })
+
+    fireEvent.change(screen.getByLabelText('Rubrique'), {
+        target: { value: '/api/categories/1' },
+    })
+
+    fireEvent.change(screen.getByLabelText('Date de publication'), {
+        target: { value: 'asc' },
+    })
+
+    expect(screen.getByText('Page 2')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Appliquer' }))
+
+    expect(
+        await screen.findByRole('heading', { name: 'Culture et cinéma' })
+    ).toBeInTheDocument()
+    expect(screen.getByText('Page 1')).toBeInTheDocument()
+
+    const expectedParameters = new URLSearchParams({
+        page: '1',
+        status: 'published',
+        title: 'cinéma',
+        category: '/api/categories/1',
+        'order[publishedAt]': 'asc',
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+        `/api/articles?${expectedParameters}`,
+        expect.objectContaining({
+            headers: {
+                Accept: 'application/ld+json',
+            },
+        }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser' }))
+
+    expect(
+        await screen.findByRole('heading', { name: 'Article page une' })
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Rechercher dans le titre')).toHaveValue('')
+    expect(screen.getByLabelText('Rubrique')).toHaveValue('')
+    expect(screen.getByLabelText('Date de publication')).toHaveValue('desc')
+    expect(screen.getByText('Page 1')).toBeInTheDocument()
+    expect(
+        screen.getByRole('button', { name: 'Précédent' }),
+    ).toBeDisabled()
 })
