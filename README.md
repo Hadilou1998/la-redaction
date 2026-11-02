@@ -63,7 +63,7 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Chargement des données avec TanStack Query.
 - États de chargement, d'erreurs et de liste vide implémentés.
 - Boutons de pagination prévus pour parcourir les résultats.
-- Cinq tests front automatisés avec Vitest et React Testing Library.
+- Onze tests front automatisés avec Vitest et React Testing Library.
 - Liste vide, pagination, contenu complet d'un article et réponse 404 vérifiées.
 - Navigation entre la liste et le détail avec React Router.
 - Titres des articles cliquables vers /articles/{id}.
@@ -74,11 +74,17 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Tri par date de publication dans les deux sens.
 - Application et réinitialisation des filtres avec retour à la première page.
 - Chargement des rubriques depuis l'API.
+- Page de connexion avec affichage des erreurs d'authentification.
+- Récupération du profil connecté avec le JWT.
+- Déconnexion avec suppression de la session et nettoyage du cache.
+- Routes des espaces journaliste et rédacteur protégées selon le rôle.
+- Retour automatique à la connexion à l'expiration du JWT.
 
-La liste publique et le détail des articles publiés sont affichés
-dans le front. Les autres écrans et les fonctionnalités de gestion
-du front restent à développer. La couverture des tests API et front
-reste à compléter.
+Le front propose la consultation publique des articles, la connexion,
+la déconnexion et des routes protégées selon le rôle.
+Les espaces journaliste et rédacteur en chef affichent actuellement
+une page d'accueil. Leurs fonctionnalités de gestion restent à développer.
+La couverture des tests API et front reste à compléter.
 
 ## Prérequis
 
@@ -219,8 +225,12 @@ Le front permet de consulter la liste et le détail des articles publiés
 sans connexion. La liste propose une recherche par titre, un filtre
 par rubrique et un tri par date de publication.
 
-Les autres écrans et les fonctionnalités de gestion du front restent
-à développer. La couverture des tests API et front reste à compléter.
+La session est conservée uniquement en mémoire : un rechargement de la page
+nécessite une nouvelle connexion. Aucun mécanisme de refresh token n'est implémenté.
+
+Les espaces journaliste et rédacteur en chef sont accessibles selon le rôle,
+mais la gestion des articles et des rubriques dans le front reste à développer.
+La couverture des tests API et front reste à compléter.
 
 L'installation depuis un clone vierge reste à vérifier.
 
@@ -465,7 +475,7 @@ Pour relancer automatiquement les tests pendant le développement :
 npm run test:watch
 ```
 
-Résultat vérifié : 5 tests réussis.
+Résultat vérifié : 11 tests réussis.
 
 Les tests couvrent :
 
@@ -477,7 +487,13 @@ Les tests couvrent :
   lorsque l'API répond 404 ;
 - L'envoi combiné du titre, de la rubrique et du tri à l'API ;
 - Le retour à la première page lors de l'application des filtres ;
-- La réinitialisation des champs et le retour à la liste initiale.
+- La réinitialisation des champs et le retour à la liste initiale ;
+- L'affichage d'une erreur lorsque les identifiants sont refusés ;
+- La connexion, l'envoi du JWT pour récupérer le profil et la déconnexion ;
+- La redirection d'un visiteur vers la connexion sur une route protégée ;
+- Le refus d'accès avec un rôle non autorisé et l'accès avec le rôle attendu ;
+- Le maintien de la session avant expiration, puis le retour à la connexion
+  et la suppression des données du cache à l'expiration du JWT.
 
 Les réponses de l'API sont simulées dans ces tests. Ces tests ne nécessitent pas le démarrage
 de Symfony et ne modifient pas la base de données.
@@ -519,6 +535,21 @@ le proxy Vite en développement.
 React Router associe la liste à `/` et le détail à `/articles/:id`.
 Les deux pages sont séparées dans `ArticleListPage.tsx` et
 `ArticleDetailPage.tsx`.
+
+La session est partagée entre les composants avec React Context.
+Le JWT est conservé en mémoire et le profil est récupéré depuis `/api/me`.
+Les appels de connexion et de récupération du profil sont regroupés
+dans `front/src/api/auth.ts`.
+
+Les routes `/journalist` et `/editor` contrôlent respectivement les rôles
+ROLE_JOURNALIST et ROLE_EDITOR. Ces contrôles organisent la navigation ;
+les autorisations sur les données restent vérifiées par Symfony.
+
+Le champ `exp` du JWT permet de programmer la déconnexion automatique.
+L'expiration est également contrôlée au retour sur l'onglet.
+La vérification de la signature du token reste assurée par l'API.
+Le cache TanStack Query est vidé lors de la connexion, de la déconnexion
+et de l'expiration pour éviter de conserver les données d'une autre session.
 
 Le détail est chargé depuis l'API avec l'identifiant présent dans l'URL.
 Une réponse API 404 affiche le même message pour un article inexistant
@@ -637,4 +668,4 @@ les transitions de statut.
 
 ## Temps passé
 
-72h
+78h
