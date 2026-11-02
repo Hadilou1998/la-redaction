@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import App from './App'
+import { MemoryRouter } from 'react-router-dom'
+import App from './App.tsx'
 
 function renderApp() {
     const queryClient = new QueryClient({
@@ -15,7 +16,9 @@ function renderApp() {
 
     return render(
         <QueryClientProvider client={queryClient}>
-            <App />
+            <MemoryRouter initialEntries={['/']}>
+                <App />
+            </MemoryRouter>
         </QueryClientProvider>,
     )
 }

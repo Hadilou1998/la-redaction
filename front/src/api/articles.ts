@@ -51,3 +51,34 @@ export async function getPublicArticles(
 
     return response.json();
 }
+
+export interface ArticleDetail extends ArticleSummary {
+    body: string;
+}
+
+export async function getArticle(
+    id: string,
+    signal?: AbortSignal,
+) : Promise<ArticleDetail> {
+    const response = await fetch(
+        `/api/articles/${encodeURIComponent(id)}`,
+        {
+            headers: {
+                Accept: "application/ld+json",
+            },
+            signal,
+        },
+    );
+
+    if (response.status === 404) {
+        throw new Error("Article introuvable ou inaccessible.");
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            `Impossible de charger l'article ${id} (HTTP ${response.status}).`,
+        );
+    }
+
+    return response.json();
+}

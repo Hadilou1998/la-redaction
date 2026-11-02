@@ -63,12 +63,18 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Chargement des données avec TanStack Query.
 - États de chargement, d'erreurs et de liste vide implémentés.
 - Boutons de pagination prévus pour parcourir les résultats.
-- Deux tests front automatisés avec Vitest et React Testing Library.
-- Liste vide et navigation entre les pages vérifiées par les tests.
+- Quatre tests front automatisés avec Vitest et React Testing Library.
+- Liste vide, pagination, contenu complet d'un article et réponse 404 vérifiées.
+- Navigation entre la liste et le détail avec React Router.
+- Titres des articles cliquables vers /articles/{id}.
+- Affichage du corps complet dans la page de détail.
+- Message commun pour les articles introuvables ou inaccessibles.
+- Lien de retour à la liste depuis le détail.
 
-La liste publique des articles est affichée dans le front.
-Les autres écrans et les fonctionnalités de gestion du front restent
-à développer. La couverture des tests API et front reste à compléter.
+La liste publique et le détail des articles publiés sont affichés
+dans le front. Les autres écrans et les fonctionnalités de gestion
+du front restent à développer. La couverture des tests API et front
+reste à compléter.
 
 ## Prérequis
 
@@ -204,6 +210,11 @@ de brouillons par les journalistes sont implémentés.
 La modification est autorisée pour l'auteur d'un brouillon
 et pour le rédacteur en chef sur les articles soumis.
 L'auteur journaliste peut soumettre son brouillon pour validation.
+
+Le front permet actuellement de consulter la liste et le détail
+des articles publiés sans connexion. Les filtres et le tri sont
+disponibles dans l'API, mais leurs contrôles dans l'interface restent
+à développer.
 
 Les autres écrans et les fonctionnalités de gestion du front restent
 à développer. La couverture des tests API et front reste à compléter.
@@ -414,6 +425,15 @@ Vérification manuelle de la liste publique du front :
 - message d'erreur affiché lorsque l'API est arrêtée ;
 - récupération des articles après redémarrage de l'API et nouvelle tentative.
 
+Vérification manuelle du détail des articles dans le front :
+
+- ouverture du détail d'un article publié ;
+- affichage du titre, du chapô, du corps, de la rubrique et de l'auteur ;
+- affichage de la date de publication ;
+- présence d'un lien de retour à la liste ;
+- message « Article introuvable ou inaccessible. » pour un identifiant
+  inexistant et un brouillon consulté sans connexion.
+
 La couverture automatisée reste à compléter, notamment pour la création,
 la modification, les validations et les autres combinaisons de permissions.
 
@@ -434,15 +454,18 @@ Pour relancer automatiquement les tests pendant le développement :
 npm run test:watch
 ```
 
-Résultat vérifié : 2 tests réussis.
+Résultat vérifié : 4 tests réussis.
 
 Les tests couvrent :
 
 - l'affichage du message de liste vide et la désactivation des boutons ;
 - le passage à la page suivante et le retour à la page précédente ;
-- la présence du numéro de page et l'appel API pour la deuxième page.
+- la présence du numéro de page et l'appel API pour la deuxième page ;
+- L'affichage du contenu complet d'un article publié ;
+- L'affichage du message « Article introuvable ou inaccessible. »
+  lorsque l'API répond 404.
 
-Les réponses HTTP sont simulées. Ces tests ne nécessitent pas le démarrage
+Les réponses de l'API sont simulées dans ces tests. Ces tests ne nécessitent pas le démarrage
 de Symfony et ne modifient pas la base de données.
 
 La compilation TypeScript et le lint ont également été vérifiés avec `npm run build` et `npm run lint`.
@@ -471,6 +494,16 @@ TanStack Query gère le chargement, le cache et les erreurs des appels API.
 La page courante fait partie de la clé de requête pour distinguer les
 résultats de pagination. Les appels HTTP sont regroupés dans
 `front/src/api/articles.ts` et utilisent le proxy Vite en développement.
+
+React Router associe la liste à `/` et le détail à `/articles/:id`.
+Les deux pages sont séparées dans `ArticleListPage.tsx` et
+`ArticleDetailPage.tsx`.
+
+Le détail est chargé depuis l'API avec l'identifiant présent dans l'URL.
+Une réponse API 404 affiche le même message pour un article inexistant
+ou inaccessible. Le contrôle des droits reste assuré par Symfony.
+Le corps de l'article est affiché comme du texte, avec l'échappement
+fourni par React.
 
 TypeScript utilise la version 5.9.3 pour respecter la compatibilité
 avec typescript-eslint. Le fichier package-lock.json conserve les versions
@@ -583,4 +616,4 @@ les transitions de statut.
 
 ## Temps passé
 
-65h
+72h
