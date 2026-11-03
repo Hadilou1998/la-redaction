@@ -37,6 +37,15 @@ use ApiPlatform\Doctrine\Orm\Filter\SortFilter;
                     property: "category",
                     filter: new IriFilter(),
                 ),
+                "author" => new QueryParameter(
+                    property: "author.id",
+                    filter: new ExactFilter(),
+                    schema: [
+                        "type" => "integer",
+                        "minimum" => 1,
+                    ],
+                    castToNativeType: true,
+                ),
                 "status" => new QueryParameter(
                     property: "status",
                     filter: new ExactFilter(),

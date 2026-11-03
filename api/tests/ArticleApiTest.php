@@ -485,6 +485,124 @@ final class ArticleApiTest extends ApiTestCase
         self::assertSame($expectedIds, $actualIds);
     }
 
+    public function testAuthorFilterRespectsVisibilityAndPagination(): void
+    {
+        $client = static::createClient();
+        $email = "journalist1@example.test";
+        $token = $this->login($client, $email);
+
+        $entityManager = static::getContainer()->get(
+            EntityManagerInterface::class,
+        );
+
+        $users = $entityManager->getRepository(User::class);
+        $articles = $entityManager->getRepository(Article::class);
+
+        $author = $users->findOneBy(["email" => $email]);
+        $otherAuthor = $users->findOneBy([
+            "email" => "journalist2@example.test",
+        ]);
+
+        self::assertInstanceOf(User::class, $author);
+        self::assertInstanceOf(User::class, $otherAuthor);
+
+        $ownIds = array_map(
+            static fn (Article $article): int => $article->getId(),
+            $articles->findBy(["author" => $author]),
+        );
+
+        $otherPublishedIds = array_map(
+            static fn (Article $article): int => $article->getId(),
+            $articles->findBy([
+                "author" => $otherAuthor,
+                "status" => ArticleStatus::Published,
+            ]),
+        );
+
+        // Vérifie que les fixtures permettent de tester les droits.
+        self::assertNotEmpty($ownIds);
+        self::assertGreaterThan(
+            count($otherPublishedIds),
+            $articles->count(["author" => $otherAuthor]),
+        );
+
+        $cases = [
+            [
+                "authorId" => $author->getId(),
+                "token" => $token,
+                "expectedIds" => $ownIds,
+                "publishedOnly" => false,
+            ],
+            [
+                "authorId" => $otherAuthor->getId(),
+                "token" => $token,
+                "expectedIds" => $otherPublishedIds,
+                "publishedOnly" => true,
+            ],
+            [
+                "authorId" => $otherAuthor->getId(),
+                "token" => null,
+                "expectedIds" => $otherPublishedIds,
+                "publishedOnly" => true,
+            ],
+        ];
+
+        foreach ($cases as $case) {
+            $expectedIds = $case["expectedIds"];
+            $actualIds = [];
+            $page = 1;
+
+            do {
+                $query = http_build_query([
+                    "author" => $case["authorId"],
+                    "page" => $page,
+                ]);
+
+                $options = [
+                    "headers" => ["Accept" => "application/ld+json"],
+                ];
+
+                if ($case["token"] !== null) {
+                    $options["auth_bearer"] = $case["token"];
+                }
+
+                $response = $client->request(
+                    "GET",
+                    "/api/articles?".$query,
+                    $options,
+                );
+
+                self::assertResponseStatusCodeSame(200);
+                $data = $response->toArray();
+
+                self::assertSame(count($expectedIds), $data["totalItems"]);
+
+                foreach ($data["member"] as $article) {
+                    self::assertSame(
+                        $case["authorId"],
+                        $article["author"]["id"],
+                    );
+
+                    if ($case["publishedOnly"]) {
+                        self::assertSame("published", $article["status"]);
+                    }
+
+                    $actualIds[] = $article["id"];
+                }
+
+                $page++;
+            } while (
+                count($actualIds) < count($expectedIds)
+                && $data["member"] !== []
+            );
+
+            sort($expectedIds);
+            sort($actualIds);
+
+            self::assertSame($expectedIds, $actualIds);
+        }
+    }
+
     private function login(Client $client, string $email): string
     {
         $response = $client->request("POST", "/api/login", [

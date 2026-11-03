@@ -49,10 +49,10 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Motif de refus conservé et visible après la reprise.
 - Suppression d'un brouillon réservée à son auteur journaliste.
 - Suppression via DELETE /api/articles/{id}.
-- Treize tests API automatisés avec PHPUnit et ApiTestCase.
+- Quatorze tests API automatisés avec PHPUnit et ApiTestCase.
 - Base PostgreSQL dédiée aux tests.
 - Annulation des modifications de chaque test avec DAMADoctrineTestBundle.
-- Filtrage des articles par rubrique, statut et recherche partielle sur le titre.
+- Filtrage des articles par rubrique, auteur, statut et recherche partielle sur le titre.
 - Tri des articles par date de publication, dans les deux sens.
 - Socle front React 19 avec Vite et TypeScript en mode strict.
 - ESLint configuré pour le front.
@@ -63,7 +63,7 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Chargement des données avec TanStack Query.
 - États de chargement, d'erreurs et de liste vide implémentés.
 - Boutons de pagination prévus pour parcourir les résultats.
-- Onze tests front automatisés avec Vitest et React Testing Library.
+- Quinze tests front automatisés avec Vitest et React Testing Library.
 - Liste vide, pagination, contenu complet d'un article et réponse 404 vérifiées.
 - Navigation entre la liste et le détail avec React Router.
 - Titres des articles cliquables vers /articles/{id}.
@@ -79,11 +79,19 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Déconnexion avec suppression de la session et nettoyage du cache.
 - Routes des espaces journaliste et rédacteur protégées selon le rôle.
 - Retour automatique à la connexion à l'expiration du JWT.
+- Espace journaliste affichant les articles du compte connecté.
+- Affichage des statuts : brouillon, soumis, publié et refusé.
+- Pagination de la liste personnelle avec chargement, erreur et liste vide.
+- Nouvelle tentative possible après une erreur de chargement.
+- Tests de la liste personnelle : statuts, auteur, JWT, pagination, liste vide et nouvelle tentative.
 
 Le front propose la consultation publique des articles, la connexion,
 la déconnexion et des routes protégées selon le rôle.
-Les espaces journaliste et rédacteur en chef affichent actuellement
-une page d'accueil. Leurs fonctionnalités de gestion restent à développer.
+L'espace journaliste affiche une liste paginée des articles du compte
+connecté, avec leur statut.
+La création, la modification et les transitions de statut depuis le front
+restent à développer.
+L'espace rédacteur en chef affiche encore une page d'accueil provisoire.
 La couverture des tests API et front reste à compléter.
 
 ## Prérequis
@@ -228,8 +236,13 @@ par rubrique et un tri par date de publication.
 La session est conservée uniquement en mémoire : un rechargement de la page
 nécessite une nouvelle connexion. Aucun mécanisme de refresh token n'est implémenté.
 
-Les espaces journaliste et rédacteur en chef sont accessibles selon le rôle,
-mais la gestion des articles et des rubriques dans le front reste à développer.
+Les espaces journaliste et rédacteur en chef sont accessibles selon le rôle.
+Le journaliste peut consulter la liste paginée de ses articles et leur statut.
+Les titres de cette liste ne donnent pas accès à un détail privé.
+
+La création, la modification, la suppression et les transitions de statut
+depuis le front restent à développer, ainsi que la gestion des rubriques.
+L'espace rédacteur en chef affiche encore une page d'accueil provisoire.
 La couverture des tests API et front reste à compléter.
 
 L'installation depuis un clone vierge reste à vérifier.
@@ -241,6 +254,7 @@ La collection `GET /api/articles` accepte les paramètres suivants :
 | Paramètre | Description | Exemple |
 | --- | --- | --- |
 | `category` | Filtrage par IRI de rubrique | `category=/api/categories/1` |
+| `author` | Filtrage par identifiant numérique de l'auteur | `author=1` |
 | `status` | Filtrage par statut | `status=published` |
 | `title` | Recherche partielle sur le titre | `title=article` |
 | `order[publishedAt]` | Tri par date de publication | `order[publishedAt]=desc` |
@@ -254,6 +268,11 @@ Les filtres respectent les droits de visibilité : un visiteur ne peut
 consulter que les articles publiés, même en demandant un autre statut.
 Un journaliste peut consulter les articles publiés et ses propres articles
 privés. Le rédacteur en chef peut consulter tous les articles.
+
+L'espace journaliste combine le filtre `author` avec l'identifiant du compte
+connecté et transmet son JWT à l'API.
+Le filtre par auteur ne donne aucun droit supplémentaire : les restrictions
+de visibilité restent appliquées côté serveur.
 
 Sans paramètre de tri, les articles sont ordonnés par date de publication
 décroissante, puis par identifiant décroissant. La pagination contient
@@ -291,7 +310,7 @@ Lance tous les tests :
 docker compose exec php php bin/phpunit
 ```
 
-Résultat vérifié : 13 tests, 226 assertions.
+Résultat vérifié : 14 tests, 260 assertions.
 
 Les tests couvrent :
 
@@ -308,7 +327,11 @@ Les tests couvrent :
 - Filtrage public sur le statut brouillon sans divulgation d'articles privés ;
 - Combinaison des filtres par rubrique, statut et titre ;
 - Tri chronologique et antéchronologique sur l'ensemble des pages ;
-- Filtrage des brouillons d'un journaliste limité à ses propres articles.
+- Filtrage des brouillons d'un journaliste limité à ses propres articles ;
+- Filtrage par auteur avec vérification des résultats sur toutes les pages ;
+- Accès aux articles de l'auteur connecté, tous statuts confondus ;
+- Accès limité aux articles publiés d'un autre auteur pour un journaliste
+  ou un visiteur.
 
 DAMADoctrineTestBundle annule les modifications après chaque test.
 Les tests retrouvent les articles sans dépendre de leurs identifiants numériques.
@@ -455,6 +478,20 @@ Vérification manuelle du détail des articles dans le front :
 - message « Article introuvable ou inaccessible. » pour un identifiant
   inexistant et un brouillon consulté sans connexion.
 
+Vérification manuelle de l'espace journaliste :
+
+- affichage de la liste personnelle pour les deux comptes journalistes ;
+- affichage de 17 articles pour Journaliste 1 et de 15 pour Journaliste 2
+  dans la base locale utilisée pour cette vérification ;
+- affichage des statuts brouillon, soumis, publié et refusé ;
+- accès à la deuxième page pour les deux comptes ;
+- bouton « Précédent » désactivé sur la première page ;
+- bouton « Suivant » désactivé sur la dernière page ;
+- affichage d'une liste différente après changement de compte.
+
+Ces nombres correspondent à la base locale après les manipulations manuelles
+et ne constituent pas les nombres attendus après un chargement neuf des fixtures.
+
 La couverture automatisée reste à compléter, notamment pour la création,
 la modification, les validations et les autres combinaisons de permissions.
 
@@ -475,7 +512,7 @@ Pour relancer automatiquement les tests pendant le développement :
 npm run test:watch
 ```
 
-Résultat vérifié : 11 tests réussis.
+Résultat vérifié : 15 tests réussis dans 6 fichiers.
 
 Les tests couvrent :
 
@@ -493,7 +530,12 @@ Les tests couvrent :
 - La redirection d'un visiteur vers la connexion sur une route protégée ;
 - Le refus d'accès avec un rôle non autorisé et l'accès avec le rôle attendu ;
 - Le maintien de la session avant expiration, puis le retour à la connexion
-  et la suppression des données du cache à l'expiration du JWT.
+  et la suppression des données du cache à l'expiration du JWT ;
+- L'affichage des quatre statuts dans la liste personnelle du journaliste ;
+- L'envoi de l'identifiant de l'auteur et du JWT pour charger ses articles ;
+- La pagination de la liste personnelle avec conservation du filtre par auteur ;
+- L'affichage d'une liste personnelle vide avec les boutons désactivés ;
+- L'affichage d'une erreur API, puis le chargement réussi après une nouvelle tentative.
 
 Les réponses de l'API sont simulées dans ces tests. Ces tests ne nécessitent pas le démarrage
 de Symfony et ne modifient pas la base de données.
@@ -544,6 +586,15 @@ dans `front/src/api/auth.ts`.
 Les routes `/journalist` et `/editor` contrôlent respectivement les rôles
 ROLE_JOURNALIST et ROLE_EDITOR. Ces contrôles organisent la navigation ;
 les autorisations sur les données restent vérifiées par Symfony.
+
+La page `JournalistDashboardPage.tsx` charge les articles du journaliste
+avec la fonction `getOwnArticles` de `front/src/api/articles.ts`.
+La requête transmet le JWT et les paramètres `author` et `page`.
+Aucun filtre de statut n'est imposé afin de retrouver tous ses articles.
+
+L'identifiant de l'utilisateur et la page font partie de la clé de requête
+TanStack Query. Le filtrage par auteur et la pagination sont réalisés
+par l'API.
 
 Le champ `exp` du JWT permet de programmer la déconnexion automatique.
 L'expiration est également contrôlée au retour sur l'onglet.
@@ -668,4 +719,4 @@ les transitions de statut.
 
 ## Temps passé
 
-78h
+80h

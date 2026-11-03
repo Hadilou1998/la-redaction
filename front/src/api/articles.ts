@@ -148,3 +148,34 @@ export async function getCategories(
         page++;
     }
 }
+
+export async function getOwnArticles(
+    authorId: number,
+    token: string,
+    page: number,
+    signal?: AbortSignal,
+) : Promise<ArticleCollection> {
+    const parameters = new URLSearchParams({
+        author: String(authorId),
+        page: String(page),
+    });
+
+    const response = await fetch(`/api/articles?${parameters}`, {
+        headers: {
+            Accept: "application/ld+json",
+            Authorization: `Bearer ${token}`,
+        },
+        signal,
+    });
+
+    if (response.status === 401) {
+        throw new Error("Votre session a expiré. Veuillez vous reconnecter.");
+    }
+    if (!response.ok) {
+        throw new Error(
+            `Impossible de charger vos articles (HTTP ${response.status}).`,
+        );
+    }
+
+    return response.json();
+}
