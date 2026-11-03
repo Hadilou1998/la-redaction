@@ -382,3 +382,51 @@ export async function submitArticle(
 
     return response.json();
 }
+
+export async function resumeArticle(
+    id: string,
+    token: string,
+) : Promise<ArticleDetail> {
+    const response = await fetch(
+        `/api/articles/${encodeURIComponent(id)}/resume`,
+        {
+            method: "POST",
+            headers: {
+                Accept: "application/ld+json",
+                Authorization: `Bearer ${token}`,
+            },
+        },
+    );
+
+    if (response.status === 401) {
+        throw new Error("Votre session a expiré. Veuillez vous reconnecter.");
+    }
+
+    if (response.status === 404) {
+        throw new Error("Article introuvable ou inaccessible.");
+    }
+
+    if (response.status === 403) {
+        throw new Error("Vous n'avez pas la permission de rétablir cet article.");
+    }
+
+    if (!response.ok) {
+        const fallback =
+            `Impossible de rétablir l'article ${id} (HTTP ${response.status}).`;
+
+        const data: unknown = await response.json().catch(() => null);
+
+        if (
+            typeof data === "object"
+            && data !== null
+            && "detail" in data
+            && typeof data.detail === "string"
+        ) {
+            throw new Error(data.detail || fallback);
+        }
+
+        throw new Error(fallback);
+    }
+
+    return response.json();
+}

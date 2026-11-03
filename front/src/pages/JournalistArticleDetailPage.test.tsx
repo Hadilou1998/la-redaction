@@ -59,6 +59,7 @@ function mockApi(
     article: ArticleDetail,
     patchResponse?: () => Response,
     submitResponse?: () => Response | Promise<Response>,
+    resumeResponse?: () => Response | Promise<Response>,
 ) {
     const articleUrl = `/api/articles/${article.id}`;
 
@@ -91,6 +92,14 @@ function mockApi(
                 && submitResponse
             ) {
                 return submitResponse();
+            }
+
+            if (
+                url === `${articleUrl}/resume`
+                && method === "POST"
+                && resumeResponse
+            ) {
+                return resumeResponse();
             }
 
             throw new Error(`Requête inattendue : ${method} ${url}`);
@@ -678,6 +687,201 @@ describe("Soumission d'un brouillon", () => {
         ).toBeInTheDocument();
 
         expect(submitResponse).toHaveBeenCalledTimes(1);
+    });
+});
+
+
+describe("Reprise d'un article refusé", () => {
+    it("reprend l'article et actualise le détail et les caches", async () => {
+        const article = makeArticle({
+            status: "rejected",
+            rejectionReason: "Veuillez compléter les sources.",
+        });
+
+        const resumedArticle = makeArticle({
+            status: "draft",
+            rejectionReason: article.rejectionReason,
+        });
+
+        const fetchMock = mockApi(
+            article,
+            undefined,
+            undefined,
+            () => jsonResponse(resumedArticle),
+        );
+
+        const queryClient = renderPage(article.id);
+
+        fireEvent.click(
+            await screen.findByRole("button", {
+                name: "Reprendre le brouillon",
+            }),
+        );
+
+        expect(
+            await screen.findByText(
+                "L'article a été repris en brouillon.",
+            ),
+        ).toBeInTheDocument();
+
+        expect(screen.getByText("Brouillon")).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("button", { name: "Modifier" }),
+        ).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("button", { name: "Soumettre" }),
+        ).toBeInTheDocument();
+
+        expect(fetchMock).toHaveBeenCalledWith(
+            `/api/articles/${article.id}/resume`,
+            {
+                method: "POST",
+                headers: {
+                    Accept: "application/ld+json",
+                    Authorization: "Bearer token-de-test",
+                },
+            },
+        );
+
+        expect(
+            queryClient.getQueryData([
+                "journalist-article",
+                7,
+                String(article.id),
+            ]),
+        ).toEqual(resumedArticle);
+
+        expect(
+            queryClient.getQueryState(["own-articles", 7, 1])
+                ?.isInvalidated,
+        ).toBe(true);
+    });
+
+    it("affiche l'erreur et permet de réessayer", async () => {
+        const article = makeArticle({
+            status: "rejected",
+            rejectionReason: "Article à corriger.",
+        });
+
+        const resumedArticle = makeArticle({
+            status: "draft",
+            rejectionReason: null,
+        });
+
+        const resumeResponse = vi.fn()
+            .mockImplementationOnce(() =>
+                jsonResponse({
+                    detail: "La reprise est temporairement indisponible.",
+                }, 503),
+            )
+            .mockImplementation(() =>
+                jsonResponse(resumedArticle),
+            );
+
+        mockApi(article, undefined, undefined, resumeResponse);
+
+        const queryClient = renderPage(article.id);
+
+        fireEvent.click(
+            await screen.findByRole("button", {
+                name: "Reprendre le brouillon",
+            }),
+        );
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "La reprise est temporairement indisponible.",
+        );
+
+        expect(screen.getByText("Refusé")).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("button", {
+                name: "Reprendre le brouillon",
+            }),
+        ).toBeEnabled();
+
+        expect(
+            queryClient.getQueryData([
+                "journalist-article",
+                7,
+                String(article.id),
+            ]),
+        ).toEqual(article);
+
+        expect(
+            queryClient.getQueryState(["own-articles", 7, 1])
+                ?.isInvalidated,
+        ).toBe(false);
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Reprendre le brouillon",
+            }),
+        );
+
+        expect(
+            await screen.findByText(
+                "L'article a été repris en brouillon.",
+            ),
+        ).toBeInTheDocument();
+
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByText("Brouillon")).toBeInTheDocument();
+        expect(resumeResponse).toHaveBeenCalledTimes(2);
+    });
+
+    it("désactive le bouton pendant la reprise et évite un second envoi", async () => {
+        const article = makeArticle({
+            status: "rejected",
+            rejectionReason: "Article à compléter.",
+        });
+
+        const resumedArticle = makeArticle({
+            status: "draft",
+            rejectionReason: null,
+        });
+
+        let resolveResumption!: (response: Response) => void;
+
+        const pendingResponse = new Promise<Response>((resolve) => {
+            resolveResumption = resolve;
+        });
+
+        const resumeResponse = vi.fn(() => pendingResponse);
+
+        mockApi(article, undefined, undefined, resumeResponse);
+        renderPage(article.id);
+
+        fireEvent.click(
+            await screen.findByRole("button", {
+                name: "Reprendre le brouillon",
+            }),
+        );
+
+        const pendingButton = await screen.findByRole("button", {
+            name: "Reprise...",
+        });
+
+        expect(pendingButton).toBeDisabled();
+
+        fireEvent.click(pendingButton);
+
+        expect(resumeResponse).toHaveBeenCalledTimes(1);
+
+        await act(async () => {
+            resolveResumption(jsonResponse(resumedArticle));
+            await pendingResponse;
+        });
+
+        expect(
+            await screen.findByText(
+                "L'article a été repris en brouillon.",
+            ),
+        ).toBeInTheDocument();
+
+        expect(resumeResponse).toHaveBeenCalledTimes(1);
     });
 });
 

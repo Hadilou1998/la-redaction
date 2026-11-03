@@ -41,6 +41,7 @@ Plateforme de gestion éditoriale développée dans le cadre d'un exercice techn
 - Espace journaliste `/journalist` : liste paginée de ses articles, quatre statuts, états vide/erreur/chargement et possibilité de réessayer.
 - Création `/journalist/articles/new` : formulaire titre, chapô facultatif, contenu et rubrique ; envoi avec JWT ; erreurs de validation conservant les champs ; formulaire désactivé pendant l'envoi ; retour à la liste et invalidation du cache après succès.
 - Détail personnel `/journalist/articles/:id` : article complet et motif de refus si présent. Modification proposée uniquement pour un brouillon appartenant au journaliste connecté ; formulaire prérempli, enregistrement `PATCH` en JSON Merge Patch avec JWT, confirmation, mise à jour des caches, gestion des erreurs `422` et annulation sans requête.
+- Soumission d'un brouillon par son auteur et reprise d'un article refusé : actions dédiées, états de chargement, gestion des erreurs et possibilité de réessayer, mise à jour du détail et invalidation du cache de la liste personnelle. Après reprise, le motif de refus reste visible.
 - Appels API centralisés dans `front/src/api/articles.ts` et `front/src/api/auth.ts`. Les autorisations réelles restent vérifiées par Symfony, même si le front masque les actions interdites.
 
 ## Installation et démarrage
@@ -153,7 +154,7 @@ npm run build
 npm run lint
 ```
 
-**Résultat documenté : 26 tests réussis dans 8 fichiers**, avec Vitest et React Testing Library. Ils vérifient la liste publique, la pagination, les filtres, le détail et les `404`, la connexion et les rôles, l'expiration JWT, la liste personnelle, la création et la modification de brouillons, les erreurs `422`, l'annulation et la cohérence du cache. Les appels API sont simulés : ces tests ne nécessitent pas Symfony ni la base PostgreSQL. Compilation TypeScript et lint vérifiés.
+**Résultat documenté : 35 tests réussis dans 8 fichiers**, avec Vitest et React Testing Library. Ils vérifient la liste publique, la pagination, les filtres, le détail et les `404`, la connexion et les rôles, l'expiration JWT, la liste personnelle, la création et la modification de brouillons, les erreurs `422`, l'annulation et la cohérence du cache. Les appels API sont simulés : ces tests ne nécessitent pas Symfony ni la base PostgreSQL. Compilation TypeScript et lint vérifiés.
 
 **Vérifications manuelles effectuées :** consultation publique, filtres, tri et détail ; récupération après erreur API ; liste et pagination des deux journalistes ; création d'un brouillon avec retour à la liste ; détail personnel, modification préremplie, confirmation et contenu mis à jour. Le proxy `/api/articles` a également été vérifié sans authentification.
 
@@ -167,7 +168,7 @@ npm run lint
 
 ## Limites et prochaines étapes
 
-- Le front ne propose pas encore la **soumission, la reprise, la suppression ni les autres transitions de statut** ; ces opérations existent déjà côté API.
+- La soumission et la reprise sont disponibles côté front ; la suppression d'un brouillon n'y est pas encore proposée. La publication et le refus doivent encore être intégrés à l'espace rédacteur en chef.
 - L'espace rédacteur en chef est encore provisoire : développer sa liste des articles soumis, leur consultation et modification, la publication et le refus avec motif, ainsi que la gestion des rubriques dans l'interface.
 - Compléter les tests API (notamment création, modification, validations et permissions) et front ; améliorer formulaires et navigation.
 - La session n'est pas persistée après rechargement (pas de refresh token). Le serveur PHP intégré et le proxy Vite sont destinés au développement.
@@ -175,4 +176,4 @@ npm run lint
 
 ## Temps passé
 
-90 h
+94 h

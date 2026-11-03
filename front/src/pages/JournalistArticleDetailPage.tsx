@@ -7,6 +7,7 @@ import {
 import { Link, useParams } from "react-router-dom";
 import {
     getAuthenticatedArticle,
+    resumeArticle,
     submitArticle,
 } from "../api/articles";
 import type { ArticleSummary } from "../api/articles";
@@ -81,6 +82,49 @@ export default function JournalistArticleDetailPage() {
         },
     });
 
+    const resumption = useMutation({
+        mutationFn: () => {
+            if (!id || !token || !user) {
+                throw new Error("Veuillez vous connecter.");
+            }
+
+            if (
+                !article
+                || article.status !== "rejected"
+                || article.author.id !== user.id
+            ) {
+                throw new Error(
+                    "Vous pouvez rétablir uniquement vos propres articles refusés.",
+                );
+            }
+
+            return resumeArticle(id, token);
+        },
+        retry: false,
+        onSuccess: async (resumedArticle) => {
+            queryClient.setQueryData(
+                ["journalist-article", user?.id, id],
+                resumedArticle,
+            );
+
+            await queryClient.invalidateQueries({
+                queryKey: ["own-articles"],
+            });
+
+            setIsEditing(false);
+            setSaved(false);
+        },
+    });
+
+    function handleResumeArticle() {
+        if (resumption.isPending) {
+            return;
+        }
+
+        setSaved(false);
+        resumption.mutate();
+    }
+
     function handleSubmitArticle() {
         if (submission.isPending) {
             return;
@@ -148,6 +192,16 @@ export default function JournalistArticleDetailPage() {
                         <p role="alert">{submission.error.message}</p>
                     )}
 
+                    {resumption.isSuccess && (
+                        <p role="status">
+                            L'article a été repris en brouillon.
+                        </p>
+                    )}
+
+                    {resumption.isError && (
+                        <p role="alert">{resumption.error.message}</p>
+                    )}
+
                     {article.status === "draft"
                         && article.author.id === user?.id && (
                             isEditing ? (
@@ -196,6 +250,27 @@ export default function JournalistArticleDetailPage() {
                                     </p>
                                 </div>
                             )
+                        )
+                    }
+
+                    {article.status === "rejected"
+                        && article.author.id === user?.id && (
+                            <div>
+                                <p>
+                                    Cet article a été refusé. Vous pouvez le reprendre
+                                    en brouillon pour le corriger.
+                                </p>
+
+                                <button
+                                    type="button"
+                                    disabled={resumption.isPending}
+                                    onClick={handleResumeArticle}
+                                >
+                                    {resumption.isPending
+                                        ? "Reprise..."
+                                        : "Reprendre le brouillon"}
+                                </button>
+                            </div>
                         )
                     }
 
