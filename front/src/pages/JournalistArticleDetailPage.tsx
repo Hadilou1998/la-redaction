@@ -4,8 +4,9 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+    deleteArticle,
     getAuthenticatedArticle,
     resumeArticle,
     submitArticle,
@@ -26,6 +27,8 @@ export default function JournalistArticleDetailPage() {
     const { token, user } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
 
     const {
@@ -124,6 +127,38 @@ export default function JournalistArticleDetailPage() {
         setSaved(false);
         resumption.mutate();
     }
+
+    const deletion = useMutation({
+        mutationFn: () => {
+            if (!id || !token || !user) {
+                throw new Error("Veuillez vous connecter.");
+            }
+
+            if (
+                !article
+                || article.status !== "draft"
+                || article.author.id !== user.id
+            ) {
+                throw new Error(
+                    "Vous pouvez supprimer uniquement vos propres articles soumis.",
+                );
+            }
+
+            return deleteArticle(id, token);
+        },
+        retry: false,
+        onSuccess: async () => {
+            queryClient.removeQueries({
+                queryKey: ["journalist-article", user?.id, id],
+            });
+
+            await queryClient.invalidateQueries({
+                queryKey: ["own-articles"],
+            });
+
+            navigate("/journalist", { replace: true });
+        },
+    });
 
     function handleSubmitArticle() {
         if (submission.isPending) {
@@ -248,6 +283,51 @@ export default function JournalistArticleDetailPage() {
                                                 : "Soumettre"}
                                         </button>
                                     </p>
+
+                                    {!isConfirmingDelete ? (
+                                        <button
+                                            type="button"
+                                            disabled={submission.isPending || deletion.isPending}
+                                            onClick={() => {
+                                                deletion.reset();
+                                                setIsConfirmingDelete(true);
+                                            }}
+                                        >
+                                            Supprimer le brouillon
+                                        </button>
+                                    ) : (
+                                        <div>
+                                            <p>
+                                                Voulez-vous vraiment supprimer ce brouillon ?
+                                                Cette action est définitive.
+                                            </p>
+
+                                            <button
+                                                type="button"
+                                                disabled={deletion.isPending}
+                                                onClick={() => deletion.mutate()}
+                                            >
+                                                {deletion.isPending
+                                                    ? "Suppression..."
+                                                    : "Confirmer la suppression"}
+                                            </button>
+
+                                            {" "}
+
+                                            <button
+                                                type="button"
+                                                disabled={deletion.isPending}
+                                                onClick={() => setIsConfirmingDelete(false)}
+                                            >
+                                                Annuler
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {deletion.isError && (
+                                        <p role="alert">{deletion.error.message}</p>
+                                    )}
+
                                 </div>
                             )
                         )

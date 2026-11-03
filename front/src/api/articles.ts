@@ -430,3 +430,36 @@ export async function resumeArticle(
 
     return response.json();
 }
+
+export async function deleteArticle(
+    id: string,
+    token: string,
+) : Promise<void> {
+    const response = await fetch(
+        `/api/articles/${encodeURIComponent(id)}`,
+        {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    if (response.status === 401) {
+        throw new Error("Votre session a expiré. Veuillez vous reconnecter.");
+    }
+
+    if (response.status === 404) {
+        throw new Error("Article introuvable ou inaccessible.");
+    }
+
+    if (response.status === 403) {
+        throw new Error("Vous n'avez pas la permission de supprimer cet article.");
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            `Impossible de supprimer l'article ${id} (HTTP ${response.status}).`
+        );
+    }
+}

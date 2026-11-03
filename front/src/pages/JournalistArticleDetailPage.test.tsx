@@ -5,6 +5,7 @@ import {
     fireEvent,
     render,
     screen,
+    waitFor,
     within,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -60,6 +61,7 @@ function mockApi(
     patchResponse?: () => Response,
     submitResponse?: () => Response | Promise<Response>,
     resumeResponse?: () => Response | Promise<Response>,
+    deleteResponse?: () => Response | Promise<Response>,
 ) {
     const articleUrl = `/api/articles/${article.id}`;
 
@@ -100,6 +102,14 @@ function mockApi(
                 && resumeResponse
             ) {
                 return resumeResponse();
+            }
+
+            if (
+                url === articleUrl
+                && method === "DELETE"
+                && deleteResponse
+            ) {
+                return deleteResponse();
             }
 
             throw new Error(`Requête inattendue : ${method} ${url}`);
@@ -155,6 +165,10 @@ function renderPage(articleId: number = 35) {
                         <Route
                             path="/journalist/articles/:id"
                             element={<JournalistArticleDetailPage />}
+                        />
+                        <Route
+                            path="/journalist"
+                            element={<h1>Liste personnelle des articles</h1>}
                         />
                     </Routes>
                 </MemoryRouter>
@@ -767,7 +781,7 @@ describe("Reprise d'un article refusé", () => {
 
         const resumedArticle = makeArticle({
             status: "draft",
-            rejectionReason: null,
+            rejectionReason: article.rejectionReason,
         });
 
         const resumeResponse = vi.fn()
@@ -912,4 +926,218 @@ describe("Identifiants des articles", () => {
             );
         },
     );
+});
+
+describe("Suppression d'un brouillon", () => {
+    it("propose la suppression uniquement à l'auteur d'un brouillon", async () => {
+        const article = makeArticle();
+
+        mockApi(article);
+        renderPage(article.id);
+
+        expect(
+            await screen.findByRole("button", {
+                name: "Supprimer le brouillon",
+            }),
+        ).toBeInTheDocument();
+    });
+
+    it.each(["submitted", "published", "rejected"] as const)(
+        "ne propose pas la suppression pour le statut %s",
+        async (status) => {
+            const article = makeArticle({ status });
+
+            mockApi(article);
+            renderPage(article.id);
+
+            await screen.findByRole("heading", {
+                level: 1,
+                name: article.title,
+            });
+
+            expect(
+                screen.queryByRole("button", {
+                    name: "Supprimer le brouillon",
+                }),
+            ).not.toBeInTheDocument();
+        },
+    );
+
+    it("ne propose pas la suppression du brouillon d'un autre auteur", async () => {
+        const article = makeArticle({
+            author: {
+                id: 8,
+                displayName: "Autre journaliste",
+            },
+        });
+
+        mockApi(article);
+        renderPage(article.id);
+
+        await screen.findByRole("heading", {
+            level: 1,
+            name: article.title,
+        });
+
+        expect(
+            screen.queryByRole("button", {
+                name: "Supprimer le brouillon",
+            }),
+        ).not.toBeInTheDocument();
+    });
+
+    it("demande confirmation et permet d'annuler sans requête DELETE", async () => {
+        const article = makeArticle();
+        const fetchMock = mockApi(article);
+
+        renderPage(article.id);
+
+        fireEvent.click(
+            await screen.findByRole("button", {
+                name: "Supprimer le brouillon",
+            }),
+        );
+
+        expect(
+            screen.getByText(/Voulez-vous vraiment supprimer ce brouillon/),
+        ).toBeInTheDocument();
+
+        expect(
+            fetchMock.mock.calls.some(
+                ([, options]) => options?.method === "DELETE",
+            ),
+        ).toBe(false);
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "Annuler" }),
+        );
+
+        expect(
+            screen.queryByRole("button", {
+                name: "Confirmer la suppression",
+            }),
+        ).not.toBeInTheDocument();
+
+        expect(
+            fetchMock.mock.calls.some(
+                ([, options]) => options?.method === "DELETE",
+            ),
+        ).toBe(false);
+    });
+
+    it("supprime le brouillon et revient à la liste personnelle", async () => {
+        const article = makeArticle();
+
+        const fetchMock = mockApi(
+            article,
+            undefined,
+            undefined,
+            undefined,
+            () => new Response(null, { status: 204 }),
+        );
+
+        const queryClient = renderPage(article.id);
+
+        fireEvent.click(
+            await screen.findByRole("button", {
+                name: "Supprimer le brouillon",
+            }),
+        );
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Confirmer la suppression",
+            }),
+        );
+
+        expect(
+            await screen.findByRole("heading", {
+                name: "Liste personnelle des articles",
+            }),
+        ).toBeInTheDocument();
+
+        expect(fetchMock).toHaveBeenCalledWith(
+            `/api/articles/${article.id}`,
+            {
+                method: "DELETE",
+                headers: {
+                    Authorization: "Bearer token-de-test",
+                },
+            },
+        );
+
+        expect(
+            queryClient.getQueryData([
+                "journalist-article",
+                7,
+                String(article.id),
+            ]),
+        ).toBeUndefined();
+
+        expect(
+            queryClient.getQueryState(["own-articles", 7, 1])
+                ?.isInvalidated,
+        ).toBe(true);
+    });
+
+    it("affiche une erreur et permet de réessayer", async () => {
+        const article = makeArticle();
+
+        const deleteResponse = vi.fn()
+            .mockImplementationOnce(() =>
+                jsonResponse({}, 503),
+            )
+            .mockImplementation(() =>
+                new Response(null, { status: 204 }),
+            );
+
+        mockApi(
+            article,
+            undefined,
+            undefined,
+            undefined,
+            deleteResponse,
+        );
+
+        renderPage(article.id);
+
+        fireEvent.click(
+            await screen.findByRole("button", {
+                name: "Supprimer le brouillon",
+            }),
+        );
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Confirmer la suppression",
+            }),
+        );
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "Impossible de supprimer l'article",
+        );
+
+        expect(
+            screen.getByRole("heading", {
+                level: 1,
+                name: article.title,
+            }),
+        ).toBeInTheDocument();
+
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Confirmer la suppression",
+            }),
+        );
+
+        await waitFor(() => {
+            expect(deleteResponse).toHaveBeenCalledTimes(2);
+        });
+
+        expect(
+            await screen.findByRole("heading", {
+                name: "Liste personnelle des articles",
+            }),
+        ).toBeInTheDocument();
+    });
 });
