@@ -63,7 +63,7 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Chargement des données avec TanStack Query.
 - États de chargement, d'erreurs et de liste vide implémentés.
 - Boutons de pagination prévus pour parcourir les résultats.
-- Dix-sept tests front automatisés avec Vitest et React Testing Library.
+- Vingt-six tests front automatisés avec Vitest et React Testing Library.
 - Liste vide, pagination, contenu complet d'un article et réponse 404 vérifiées.
 - Navigation entre la liste et le détail avec React Router.
 - Titres des articles cliquables vers /articles/{id}.
@@ -91,14 +91,25 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Désactivation du formulaire pendant l'enregistrement.
 - Retour à la liste personnelle après création et invalidation de son cache.
 - Tests de création réussie et de réponse de validation 422.
+- Consultation du détail d'un article depuis la liste personnelle.
+- Chargement du détail avec le JWT du journaliste connecté.
+- Affichage du contenu complet et du motif de refus lorsqu'il est présent.
+- Modification des brouillons du journaliste avec un formulaire prérempli.
+- Enregistrement des modifications avec affichage d'une confirmation.
+- Mise à jour du cache du détail et invalidation de la liste personnelle.
+- Conservation des champs saisis après une erreur de validation.
+- Annulation des modifications sans envoi à l'API.
+- Neuf tests supplémentaires pour le détail personnel et la modification.
 
 Le front propose la consultation publique des articles, la connexion,
 la déconnexion et des routes protégées selon le rôle.
 L'espace journaliste affiche une liste paginée des articles du compte
-connecté, avec leur statut.
-Le journaliste peut également créer un brouillon depuis un formulaire.
-La modification, la suppression et les transitions de statut depuis le front
-restent à développer.
+connecté, avec leur statut et un lien vers leur détail.
+Le journaliste peut créer un brouillon, consulter son contenu complet
+et modifier ses propres brouillons. Le motif de refus est affiché
+lorsqu'il est présent dans la réponse de l'API.
+La suppression et les transitions de statut depuis le front restent
+à développer.
 L'espace rédacteur en chef affiche encore une page d'accueil provisoire.
 La couverture des tests API et front reste à compléter.
 
@@ -245,12 +256,18 @@ La session est conservée uniquement en mémoire : un rechargement de la page
 nécessite une nouvelle connexion. Aucun mécanisme de refresh token n'est implémenté.
 
 Les espaces journaliste et rédacteur en chef sont accessibles selon le rôle.
-Le journaliste peut consulter la liste paginée de ses articles et leur statut.
-Les titres de cette liste ne donnent pas accès à un détail privé.
+Le journaliste peut consulter la liste paginée de ses articles, leur statut
+et leur détail depuis les titres cliquables.
 
-La création de brouillons est disponible depuis le front.
-La modification, la suppression et les transitions de statut
-restent à développer dans le front, ainsi que la gestion des rubriques.
+La création de brouillons et la modification de ses propres brouillons
+sont disponibles depuis le front.
+Les articles soumis, publiés ou refusés ne proposent pas de bouton
+de modification au journaliste. Un article refusé devra être repris
+en brouillon avant de pouvoir être modifié.
+
+La suppression et les transitions de statut restent à développer
+dans le front, ainsi que la gestion des rubriques et les fonctions
+de relecture du rédacteur en chef.
 L'espace rédacteur en chef affiche encore une page d'accueil provisoire.
 La couverture des tests API et front reste à compléter.
 
@@ -510,9 +527,20 @@ Vérification manuelle de la création depuis le front :
 - affichage du nouvel article avec le statut Brouillon ;
 - passage du compteur de 17 à 18 articles pour Journaliste 1.
 
+Vérification manuelle du détail personnel et de la modification depuis le front :
+
+- consultation du détail du brouillon créé avec le compte Journaliste 1 ;
+- affichage du titre, du chapô, du contenu, de la rubrique et de l'auteur ;
+- ouverture du formulaire de modification avec les données préremplies ;
+- ajout d'une phrase dans le contenu ;
+- enregistrement avec affichage du message de confirmation ;
+- affichage du contenu actualisé après l'enregistrement ;
+- maintien du statut Brouillon.
+
 La couverture automatisée côté API reste à compléter, notamment pour la
 création, la modification, les validations et les autres combinaisons
-de permissions. Les tests front de création utilisent des réponses API simulées.
+de permissions. Les tests front de création, de détail personnel et de
+modification utilisent des réponses API simulées.
 
 ### Tests front automatisés
 
@@ -531,7 +559,7 @@ Pour relancer automatiquement les tests pendant le développement :
 npm run test:watch
 ```
 
-Résultat vérifié : 17 tests réussis dans 7 fichiers.
+Résultat vérifié : 26 tests réussis dans 8 fichiers.
 
 Les tests couvrent :
 
@@ -560,7 +588,21 @@ Les tests couvrent :
 - L'invalidation du cache de la liste personnelle après création ;
 - L'affichage du message de validation renvoyé par une réponse 422 ;
 - La conservation des champs et la possibilité de réessayer après cet échec ;
-- L'absence d'invalidation du cache lorsque la création échoue.
+- L'absence d'invalidation du cache lorsque la création échoue ;
+- Le chargement du détail personnel avec transmission du JWT ;
+- L'affichage du contenu complet d'un brouillon ;
+- L'affichage du motif de refus sans bouton de modification ;
+- L'absence du bouton de modification pour les articles soumis ou publiés ;
+- L'absence du bouton de modification pour un brouillon d'un autre auteur
+  dans une réponse simulée ;
+- L'affichage d'une erreur lorsque le détail personnel renvoie 404 ;
+- Le préremplissage du formulaire de modification ;
+- L'envoi des champs nettoyés avec le JWT et le format JSON Merge Patch ;
+- L'affichage du détail actualisé et d'une confirmation après enregistrement ;
+- La mise à jour du cache du détail et l'invalidation de la liste personnelle ;
+- La conservation des champs et des caches après une réponse de validation 422 ;
+- L'annulation sans requête PATCH et le rétablissement des valeurs
+  enregistrées à la réouverture du formulaire.
 
 Les réponses de l'API sont simulées dans ces tests. Ces tests ne nécessitent pas le démarrage
 de Symfony et ne modifient pas la base de données.
@@ -632,6 +674,29 @@ Après une création réussie, les requêtes `own-articles` sont invalidées
 et le journaliste est redirigé vers sa liste personnelle.
 En cas d'erreur, les messages de validation sont affichés et les champs
 restent remplis pour permettre une correction.
+
+La route `/journalist/articles/:id` est protégée par le rôle ROLE_JOURNALIST.
+La page `JournalistArticleDetailPage.tsx` utilise `getAuthenticatedArticle`
+pour charger le détail avec le JWT.
+L'identifiant du compte connecté et celui de l'article font partie
+de la clé de cache `journalist-article`.
+
+Le bouton de modification est affiché uniquement lorsque l'article
+est un brouillon appartenant au journaliste connecté.
+Les permissions restent contrôlées côté API : masquer un bouton
+ne remplace pas une autorisation serveur.
+
+Le composant `ArticleEditForm.tsx` préremplit les champs et charge
+les rubriques depuis l'API.
+La fonction `updateArticle` envoie une requête PATCH avec le type
+`application/merge-patch+json` et le JWT.
+Seuls le titre, le chapô, le corps et l'IRI de la rubrique sont transmis.
+
+Après une modification réussie, la réponse de l'API remplace les données
+du détail dans le cache et les requêtes `own-articles` sont invalidées.
+Le formulaire se ferme et une confirmation est affichée.
+En cas d'erreur de validation, les champs restent remplis.
+L'annulation ferme le formulaire sans envoyer de modification.
 
 Le champ `exp` du JWT permet de programmer la déconnexion automatique.
 L'expiration est également contrôlée au retour sur l'onglet.
@@ -746,14 +811,15 @@ et le mécanisme de suppression Doctrine fourni par API Platform.
 
 ## Priorités pour la suite
 
-Développer les autres écrans du front et leurs interactions avec l'API,
-compléter la couverture des tests API et front, puis vérifier la procédure
-d'installation sur une machine vierge.
+Ajouter dans le front la soumission des brouillons, la reprise des articles
+refusés et la suppression des brouillons.
+Développer ensuite l'espace rédacteur en chef : liste des articles soumis,
+consultation, modification, publication et refus avec motif.
 
-Avec davantage de temps, ajouter une intégration continue exécutant
-les tests et étudier le composant Workflow de Symfony pour centraliser
-les transitions de statut.
+Compléter les tests des nouveaux parcours, améliorer la présentation
+des formulaires et de la navigation, puis vérifier la procédure
+d'installation depuis un clone vierge.
 
 ## Temps passé
 
-83h
+86h

@@ -91,7 +91,11 @@ export default function JournalistDashboardPage() {
                                         {article.category.name}
                                     </p>
 
-                                    <h2>{article.title}</h2>
+                                    <h2>
+                                        <Link to={`/journalist/articles/${article.id}`}>
+                                            {article.title}
+                                        </Link>
+                                    </h2>
                                     <p>{article.chapo}</p>
                                     <p>
                                         Statut :{" "}

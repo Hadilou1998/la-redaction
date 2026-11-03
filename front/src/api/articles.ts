@@ -75,6 +75,7 @@ export async function getPublicArticles(
 
 export interface ArticleDetail extends ArticleSummary {
     body: string;
+    rejectionReason?: string | null;
 }
 
 export async function getArticle(
@@ -226,6 +227,97 @@ export async function createArticle(
 
                         return [];
                     }
+                );
+
+                if (messages.length > 0) {
+                    throw new Error(messages.join(" "));
+                }
+            }
+
+            if ("detail" in data && typeof data.detail === "string") {
+                throw new Error(data.detail || fallback);
+            }
+        }
+
+        throw new Error(fallback);
+    }
+
+    return response.json();
+}
+
+export async function getAuthenticatedArticle (
+    id: string,
+    token: string,
+    signal?: AbortSignal,
+) : Promise<ArticleDetail> {
+    const response = await fetch(
+        `/api/articles/${encodeURIComponent(id)}`,
+        {
+            headers: {
+                Accept: "application/ld+json",
+                Authorization: `Bearer ${token}`,
+            },
+            signal,
+        },
+    );
+
+    if (response.status === 401) {
+        throw new Error("Votre session a expiré. Veuillez vous reconnecter.");
+    }
+
+    if (response.status === 404) {
+        throw new Error("Article introuvable ou inaccessible.");
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            `Impossible de charger l'article ${id} (HTTP ${response.status}).`,
+        );
+    }
+
+    return response.json();
+}
+
+export async function updateArticle(
+    id: string,
+    input: ArticleInput,
+    token: string,
+) : Promise<ArticleDetail> {
+    const response = await fetch(`/api/articles/${id}`, {
+        method: "PATCH",
+        headers: {
+            Accept: "application/ld+json",
+            "Content-Type": "application/merge-patch+json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(input),
+    });
+
+    if (response.status === 401) {
+        throw new Error("Votre session a expiré. Veuillez vous reconnecter.");
+    }
+
+    if (!response.ok) {
+        const fallback =
+            `Impossible de mettre à jour l'article ${id} (HTTP ${response.status}).`;
+
+        const data: unknown = await response.json().catch(() => null);
+
+        if (typeof data === "object" && data !== null) {
+            if ("violations" in data && Array.isArray(data.violations)) {
+                const messages = data.violations.flatMap(
+                    (violation: unknown) => {
+                        if (
+                            typeof violation === "object"
+                            && violation !== null
+                            && "message" in violation
+                            && typeof violation.message === "string"
+                        ) {
+                            return [violation.message];
+                        }
+
+                        return [];
+                    },
                 );
 
                 if (messages.length > 0) {
