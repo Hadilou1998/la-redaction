@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+    act,
     cleanup,
     fireEvent,
     render,
@@ -24,11 +25,13 @@ const category = {
 function makeArticle(
     overrides: Partial<ArticleDetail> = {},
 ): ArticleDetail {
+    const id = overrides.id ?? 35;
+
     return {
-        "@id": "/api/articles/35",
-        id: 35,
+        "@id": `/api/articles/${id}`,
+        id,
         title: "Une bibliothèque ouvre ses portes",
-        slug: "une-bibliotheque-ouvre-ses-portes",
+        slug: `une-bibliotheque-ouvre-ses-portes-${id}`,
         chapo: "Une nouvelle bibliothèque dans le quartier.",
         body: "Des livres et des ateliers seront proposés.",
         status: "draft",
@@ -55,13 +58,16 @@ function jsonResponse(data: unknown, status = 200) {
 function mockApi(
     article: ArticleDetail,
     patchResponse?: () => Response,
+    submitResponse?: () => Response | Promise<Response>,
 ) {
+    const articleUrl = `/api/articles/${article.id}`;
+
     const fetchMock = vi.fn(
         async (input: RequestInfo | URL, init?: RequestInit) => {
             const url = String(input);
             const method = init?.method ?? "GET";
 
-            if (url === "/api/articles/35" && method === "GET") {
+            if (url === articleUrl && method === "GET") {
                 return jsonResponse(article);
             }
 
@@ -72,11 +78,19 @@ function mockApi(
             }
 
             if (
-                url === "/api/articles/35"
+                url === articleUrl
                 && method === "PATCH"
                 && patchResponse
             ) {
                 return patchResponse();
+            }
+
+            if (
+                url === `${articleUrl}/submit`
+                && method === "POST"
+                && submitResponse
+            ) {
+                return submitResponse();
             }
 
             throw new Error(`Requête inattendue : ${method} ${url}`);
@@ -88,7 +102,7 @@ function mockApi(
     return fetchMock;
 }
 
-function renderPage() {
+function renderPage(articleId: number = 35) {
     const queryClient = new QueryClient({
         defaultOptions: {
             queries: {
@@ -105,7 +119,7 @@ function renderPage() {
 
     queryClient.setQueryData(["own-articles", 7, 1], {
         totalItems: 1,
-        member: [makeArticle()],
+        member: [makeArticle({ id: articleId })],
     });
 
     render(
@@ -124,7 +138,9 @@ function renderPage() {
                 }}
             >
                 <MemoryRouter
-                    initialEntries={["/journalist/articles/35"]}
+                    initialEntries={[
+                        `/journalist/articles/${articleId}`,
+                    ]}
                 >
                     <Routes>
                         <Route
@@ -164,7 +180,7 @@ describe("Détail personnel d'un article", () => {
         const article = makeArticle();
         const fetchMock = mockApi(article);
 
-        renderPage();
+        renderPage(article.id);
 
         expect(
             await screen.findByRole("heading", {
@@ -180,14 +196,20 @@ describe("Détail personnel d'un article", () => {
             name: "Contenu de l’article",
         });
 
-        expect(within(content).getByText(article.body)).toBeInTheDocument();
+        expect(
+            within(content).getByText(article.body),
+        ).toBeInTheDocument();
 
         expect(
             screen.getByRole("button", { name: "Modifier" }),
         ).toBeInTheDocument();
 
+        expect(
+            screen.getByRole("button", { name: "Soumettre" }),
+        ).toBeInTheDocument();
+
         expect(fetchMock).toHaveBeenCalledWith(
-            "/api/articles/35",
+            `/api/articles/${article.id}`,
             expect.objectContaining({
                 headers: {
                     Accept: "application/ld+json",
@@ -204,7 +226,7 @@ describe("Détail personnel d'un article", () => {
         });
 
         mockApi(article);
-        renderPage();
+        renderPage(article.id);
 
         const rejection = await screen.findByRole("region", {
             name: "Motif de refus",
@@ -219,6 +241,10 @@ describe("Détail personnel d'un article", () => {
         expect(
             screen.queryByRole("button", { name: "Modifier" }),
         ).not.toBeInTheDocument();
+
+        expect(
+            screen.queryByRole("button", { name: "Soumettre" }),
+        ).not.toBeInTheDocument();
     });
 
     it.each(["submitted", "published"] as const)(
@@ -227,7 +253,7 @@ describe("Détail personnel d'un article", () => {
             const article = makeArticle({ status });
 
             mockApi(article);
-            renderPage();
+            renderPage(article.id);
 
             await screen.findByRole("heading", {
                 level: 1,
@@ -236,6 +262,10 @@ describe("Détail personnel d'un article", () => {
 
             expect(
                 screen.queryByRole("button", { name: "Modifier" }),
+            ).not.toBeInTheDocument();
+
+            expect(
+                screen.queryByRole("button", { name: "Soumettre" }),
             ).not.toBeInTheDocument();
         },
     );
@@ -278,6 +308,10 @@ describe("Détail personnel d'un article", () => {
         expect(
             screen.queryByRole("button", { name: "Modifier" }),
         ).not.toBeInTheDocument();
+
+        expect(
+            screen.queryByRole("button", { name: "Soumettre" }),
+        ).not.toBeInTheDocument();
     });
 });
 
@@ -309,6 +343,10 @@ describe("Modification d'un brouillon", () => {
             category["@id"],
         );
 
+        expect(
+            screen.queryByRole("button", { name: "Soumettre" }),
+        ).not.toBeInTheDocument();
+
         fireEvent.change(screen.getByLabelText("Titre"), {
             target: { value: `  ${updatedArticle.title}  ` },
         });
@@ -334,7 +372,7 @@ describe("Modification d'un brouillon", () => {
         ).toBeInTheDocument();
 
         expect(fetchMock).toHaveBeenCalledWith(
-            "/api/articles/35",
+            `/api/articles/${article.id}`,
             {
                 method: "PATCH",
                 headers: {
@@ -358,18 +396,18 @@ describe("Modification d'un brouillon", () => {
             }),
         ).toBeInTheDocument();
 
+        const content = screen.getByRole("region", {
+            name: "Contenu de l’article",
+        });
+
         expect(
-            within(
-                screen.getByRole("region", {
-                    name: "Contenu de l’article",
-                }),
-            ).getByText(updatedArticle.body),
+            within(content).getByText(updatedArticle.body),
         ).toBeInTheDocument();
 
         expect(screen.queryByLabelText("Titre")).not.toBeInTheDocument();
 
         expect(
-            queryClient.getQueryData(["journalist-article", 7, "35"]),
+            queryClient.getQueryData(["journalist-article", 7, String(article.id)]),
         ).toEqual(updatedArticle);
 
         expect(
@@ -391,7 +429,7 @@ describe("Modification d'un brouillon", () => {
             }, 422),
         );
 
-        const queryClient = renderPage();
+        const queryClient = renderPage(article.id);
 
         await openEditForm();
 
@@ -436,7 +474,7 @@ describe("Modification d'un brouillon", () => {
         ).not.toBeInTheDocument();
 
         expect(
-            queryClient.getQueryData(["journalist-article", 7, "35"]),
+            queryClient.getQueryData(["journalist-article", 7, String(article.id)]),
         ).toEqual(article);
 
         expect(
@@ -449,7 +487,7 @@ describe("Modification d'un brouillon", () => {
         const article = makeArticle();
         const fetchMock = mockApi(article);
 
-        renderPage();
+        renderPage(article.id);
 
         await openEditForm();
 
@@ -473,4 +511,201 @@ describe("Modification d'un brouillon", () => {
             ),
         ).toBe(false);
     });
+});
+
+describe("Soumission d'un brouillon", () => {
+    it("soumet le brouillon et actualise le détail et les caches", async () => {
+        const article = makeArticle();
+        const submittedArticle = makeArticle({
+            status: "submitted",
+        });
+
+        const fetchMock = mockApi(
+            article,
+            undefined,
+            () => jsonResponse(submittedArticle),
+        );
+
+        const queryClient = renderPage();
+
+        fireEvent.click(
+            await screen.findByRole("button", { name: "Soumettre" }),
+        );
+
+        expect(
+            await screen.findByText(
+                /article a été soumis au rédacteur en chef/,
+            ),
+        ).toBeInTheDocument();
+
+        expect(screen.getByText("Soumis")).toBeInTheDocument();
+
+        expect(
+            screen.queryByRole("button", { name: "Modifier" }),
+        ).not.toBeInTheDocument();
+
+        expect(
+            screen.queryByRole("button", { name: "Soumettre" }),
+        ).not.toBeInTheDocument();
+
+        expect(fetchMock).toHaveBeenCalledWith(
+            `/api/articles/${article.id}/submit`,
+            {
+                method: "POST",
+                headers: {
+                    Accept: "application/ld+json",
+                    Authorization: "Bearer token-de-test",
+                },
+            },
+        );
+
+        expect(
+            queryClient.getQueryData(["journalist-article", 7, String(article.id)]),
+        ).toEqual(submittedArticle);
+
+        expect(
+            queryClient.getQueryState(["own-articles", 7, 1])
+                ?.isInvalidated,
+        ).toBe(true);
+    });
+
+    it("affiche l'erreur et permet de réessayer après un échec", async () => {
+        const article = makeArticle();
+        const submittedArticle = makeArticle({
+            status: "submitted",
+        });
+
+        const submitResponse = vi.fn()
+            .mockImplementationOnce(() =>
+                jsonResponse({
+                    detail: "La soumission est temporairement indisponible.",
+                }, 503),
+            )
+            .mockImplementation(() =>
+                jsonResponse(submittedArticle),
+            );
+
+        mockApi(article, undefined, submitResponse);
+
+        const queryClient = renderPage(article.id);
+
+        fireEvent.click(
+            await screen.findByRole("button", { name: "Soumettre" }),
+        );
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "La soumission est temporairement indisponible.",
+        );
+
+        expect(screen.getByText("Brouillon")).toBeInTheDocument();
+
+        expect(
+            screen.getByRole("button", { name: "Modifier" }),
+        ).toBeEnabled();
+
+        expect(
+            screen.getByRole("button", { name: "Soumettre" }),
+        ).toBeEnabled();
+
+        expect(
+            queryClient.getQueryData(["journalist-article", 7, String(article.id)]),
+        ).toEqual(article);
+
+        expect(
+            queryClient.getQueryState(["own-articles", 7, 1])
+                ?.isInvalidated,
+        ).toBe(false);
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "Soumettre" }),
+        );
+
+        expect(
+            await screen.findByText(
+                /article a été soumis au rédacteur en chef/,
+            ),
+        ).toBeInTheDocument();
+
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByText("Soumis")).toBeInTheDocument();
+        expect(submitResponse).toHaveBeenCalledTimes(2);
+    });
+
+    it("désactive les actions pendant la soumission et évite un second envoi", async () => {
+        const article = makeArticle();
+        const submittedArticle = makeArticle({
+            status: "submitted",
+        });
+
+        let resolveSubmission!: (response: Response) => void;
+
+        const pendingResponse = new Promise<Response>((resolve) => {
+            resolveSubmission = resolve;
+        });
+
+        const submitResponse = vi.fn(() => pendingResponse);
+
+        mockApi(article, undefined, submitResponse);
+        renderPage();
+
+        fireEvent.click(
+            await screen.findByRole("button", { name: "Soumettre" }),
+        );
+
+        const pendingButton = await screen.findByRole("button", {
+            name: "Soumission...",
+        });
+
+        expect(pendingButton).toBeDisabled();
+
+        expect(
+            screen.getByRole("button", { name: "Modifier" }),
+        ).toBeDisabled();
+
+        fireEvent.click(pendingButton);
+
+        expect(submitResponse).toHaveBeenCalledTimes(1);
+
+        await act(async () => {
+            resolveSubmission(jsonResponse(submittedArticle));
+            await pendingResponse;
+        });
+
+        expect(
+            await screen.findByText(
+                /article a été soumis au rédacteur en chef/,
+            ),
+        ).toBeInTheDocument();
+
+        expect(submitResponse).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("Identifiants des articles", () => {
+    it.each([12, 35, 108])(
+        "charge l'article demandé avec l'identifiant %i",
+        async (id) => {
+            const article = makeArticle({ id });
+            const fetchMock = mockApi(article);
+
+            renderPage(id);
+
+            expect(
+                await screen.findByRole("heading", {
+                    level: 1,
+                    name: article.title,
+                }),
+            ).toBeInTheDocument();
+
+            expect(fetchMock).toHaveBeenCalledWith(
+                `/api/articles/${id}`,
+                expect.objectContaining({
+                    headers: {
+                        Accept: "application/ld+json",
+                        Authorization: "Bearer token-de-test",
+                    },
+                }),
+            );
+        },
+    );
 });

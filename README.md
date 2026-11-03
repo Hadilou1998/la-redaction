@@ -1,197 +1,83 @@
 # La Rédaction
 
-Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice technique.
+Plateforme de gestion éditoriale développée dans le cadre d'un exercice technique. Elle permet de consulter des articles, de gérer leur rédaction et de contrôler leur publication selon le rôle de l'utilisateur.
 
-## État actuel
+## Technologies
 
-- Environnement Docker avec PHP 8.3 et PostgreSQL 16.
-- Symfony 7.4 LTS, API Platform 4 et Doctrine ORM installés.
-- Entité User créée et migration appliquée.
-- Authentification JWT avec LexikJWTAuthenticationBundle.
-- Route POST /api/login : connexion par email et mot de passe.
-- Route GET /api/me : profil de l'utilisateur connecté.
-- Trois comptes de démonstration avec mots de passe hashés.
-- Serveur HTTP de développement accessible sur <http://127.0.0.1:8000>.
-- Rubriques : lecture publique et écritures réservées au rédacteur en chef.
-- Validation du nom et unicité du nom et du slug.
-- Génération automatique du slug à la création.
-- Cinq rubriques de démonstration chargées par les fixtures.
-- Entité Article liée à un auteur et une rubrique, avec migration appliquée.
-- Quatre statuts définis par une énumération PHP.
-- Validation du titre, du chapô, du corps et de la rubrique.
-- Slugs des articles générés automatiquement et uniques en base.
-- Callbacks Doctrine pour initialiser et actualiser les dates.
-- Trente articles de démonstration dans des statuts variés.
-- Liste paginée et détail des articles accessibles via l'API.
-- Visiteurs : accès aux articles publiés uniquement.
-- Rédacteur en chef : accès à tous les articles.
-- Articles privés inaccessibles renvoyés en 404.
-- Données de l'auteur limitées à son identifiant et son nom affiché.
-- Journalistes : accès aux articles publiés et à leurs propres articles privés.
-- Création d'un article réservée aux journalistes connectés.
-- Attribution automatique de l'auteur et du statut brouillon.
-- Refus des champs non autorisés dans les requêtes de création.
-- Modification des brouillons réservée à leur auteur journaliste.
-- Modification des articles soumis réservée au rédacteur en chef.
-- Permissions de modification centralisées dans un Voter.
-- Soumission d'un brouillon réservée à son auteur journaliste.
-- Passage de draft à submitted via POST /api/articles/{id}/submit.
-- Après soumission, le journaliste ne peut plus modifier l'article.
-- Publication des articles soumis réservée au rédacteur en chef.
-- Passage de submitted à published via POST /api/articles/{id}/publish.
-- Date de publication attribuée automatiquement.
-- Article accessible sans connexion après publication.
-- Refus des articles soumis réservé au rédacteur en chef.
-- Passage de submitted à rejected via POST /api/articles/{id}/reject.
-- Motif de refus obligatoire, nettoyé et consultable par l'auteur.
-- Reprise d'un article refusé réservée à son auteur journaliste.
-- Passage de rejected à draft via POST /api/articles/{id}/resume.
-- Motif de refus conservé et visible après la reprise.
-- Suppression d'un brouillon réservée à son auteur journaliste.
-- Suppression via DELETE /api/articles/{id}.
-- Quatorze tests API automatisés avec PHPUnit et ApiTestCase.
-- Base PostgreSQL dédiée aux tests.
-- Annulation des modifications de chaque test avec DAMADoctrineTestBundle.
-- Filtrage des articles par rubrique, auteur, statut et recherche partielle sur le titre.
-- Tri des articles par date de publication, dans les deux sens.
-- Socle front React 19 avec Vite et TypeScript en mode strict.
-- ESLint configuré pour le front.
-- Proxy de développement transmettant les requêtes /api à Symfony.
-- Compilation et lint du front vérifiés.
-- Liste publique des articles affichée dans le front.
-- Affichage du titre, du chapô, de la rubrique, de l'auteur et de la date.
-- Chargement des données avec TanStack Query.
-- États de chargement, d'erreurs et de liste vide implémentés.
-- Boutons de pagination prévus pour parcourir les résultats.
-- Vingt-six tests front automatisés avec Vitest et React Testing Library.
-- Liste vide, pagination, contenu complet d'un article et réponse 404 vérifiées.
-- Navigation entre la liste et le détail avec React Router.
-- Titres des articles cliquables vers /articles/{id}.
-- Affichage du corps complet dans la page de détail.
-- Message commun pour les articles introuvables ou inaccessibles.
-- Lien de retour à la liste depuis le détail.
-- Recherche par titre et filtrage par rubrique dans la liste publique.
-- Tri par date de publication dans les deux sens.
-- Application et réinitialisation des filtres avec retour à la première page.
-- Chargement des rubriques depuis l'API.
-- Page de connexion avec affichage des erreurs d'authentification.
-- Récupération du profil connecté avec le JWT.
-- Déconnexion avec suppression de la session et nettoyage du cache.
-- Routes des espaces journaliste et rédacteur protégées selon le rôle.
-- Retour automatique à la connexion à l'expiration du JWT.
-- Espace journaliste affichant les articles du compte connecté.
-- Affichage des statuts : brouillon, soumis, publié et refusé.
-- Pagination de la liste personnelle avec chargement, erreur et liste vide.
-- Nouvelle tentative possible après une erreur de chargement.
-- Tests de la liste personnelle : statuts, auteur, JWT, pagination, liste vide et nouvelle tentative.
-- Création d'un brouillon depuis l'espace journaliste.
-- Formulaire avec titre, chapô facultatif, contenu et rubrique.
-- Envoi des données à l'API avec le JWT du journaliste.
-- Affichage des erreurs de validation avec conservation des champs saisis.
-- Désactivation du formulaire pendant l'enregistrement.
-- Retour à la liste personnelle après création et invalidation de son cache.
-- Tests de création réussie et de réponse de validation 422.
-- Consultation du détail d'un article depuis la liste personnelle.
-- Chargement du détail avec le JWT du journaliste connecté.
-- Affichage du contenu complet et du motif de refus lorsqu'il est présent.
-- Modification des brouillons du journaliste avec un formulaire prérempli.
-- Enregistrement des modifications avec affichage d'une confirmation.
-- Mise à jour du cache du détail et invalidation de la liste personnelle.
-- Conservation des champs saisis après une erreur de validation.
-- Annulation des modifications sans envoi à l'API.
-- Neuf tests supplémentaires pour le détail personnel et la modification.
+- **API :** PHP 8.3, Symfony 7.4 LTS, API Platform 4, Doctrine ORM, PostgreSQL 16, authentification JWT (LexikJWTAuthenticationBundle).
+- **Front :** React 19, Vite, TypeScript strict, React Router, TanStack Query, ESLint.
+- **Environnement et tests :** Docker Compose, PHPUnit / ApiTestCase, DAMADoctrineTestBundle, Vitest 4.1, React Testing Library et jsdom.
 
-Le front propose la consultation publique des articles, la connexion,
-la déconnexion et des routes protégées selon le rôle.
-L'espace journaliste affiche une liste paginée des articles du compte
-connecté, avec leur statut et un lien vers leur détail.
-Le journaliste peut créer un brouillon, consulter son contenu complet
-et modifier ses propres brouillons. Le motif de refus est affiché
-lorsqu'il est présent dans la réponse de l'API.
-La suppression et les transitions de statut depuis le front restent
-à développer.
-L'espace rédacteur en chef affiche encore une page d'accueil provisoire.
-La couverture des tests API et front reste à compléter.
+## Fonctionnalités réalisées
 
-## Prérequis
+### API et données
 
-- Docker Desktop démarré avec les conteneurs.
-- Git.
-- Node.js 22.22.0 et npm 10.9.4 : versions utilisées pour le front.
+- Utilisateurs avec rôles, mots de passe hashés, connexion `POST /api/login` et profil `GET /api/me`.
+- Rubriques consultables publiquement ; création, modification et suppression réservées au rédacteur en chef. Validation et unicité du nom et du slug ; slug généré automatiquement et conservé lors du renommage.
+- Articles liés à un auteur et à une rubrique ; titre, chapô, contenu et rubrique validés ; slug unique généré automatiquement, stable lors des modifications ; dates gérées par Doctrine.
+- Quatre statuts : `draft`, `submitted`, `published`, `rejected`. Fixtures : **3 utilisateurs, 5 rubriques et 30 articles** (8 brouillons, 8 soumis, 7 publiés, 7 refusés).
+- Liste paginée (**10 articles/page**) et détail. Filtres par rubrique, auteur, statut et titre ; tri par date de publication ascendant ou descendant. Par défaut : date de publication décroissante puis identifiant décroissant.
+- Visiteur : articles publiés uniquement ; journaliste : articles publiés et ses propres articles privés ; rédacteur en chef : tous les articles. Les articles non accessibles renvoient **404**. Filtrage appliqué côté serveur avant pagination ; auteur exposé uniquement avec son identifiant et son nom affiché ; corps réservé au détail.
+- Création réservée aux journalistes authentifiés : auteur et statut brouillon attribués côté API. Seuls titre, chapô, corps et rubrique sont acceptés.
+- Modification via `PATCH` : propres brouillons pour le journaliste, articles soumis pour le rédacteur en chef. Autorisations centralisées dans un **Voter** ; champs non autorisés refusés.
+- Cycle éditorial :
 
-## Installation
+  | Action | Route | Autorisation / effet |
+  | --- | --- | --- |
+  | Soumettre | `POST /api/articles/{id}/submit` | Auteur journaliste : `draft` → `submitted` |
+  | Publier | `POST /api/articles/{id}/publish` | Rédacteur en chef : `submitted` → `published`, date de publication automatique |
+  | Refuser | `POST /api/articles/{id}/reject` | Rédacteur en chef : `submitted` → `rejected`, motif obligatoire nettoyé |
+  | Reprendre | `POST /api/articles/{id}/resume` | Auteur journaliste : `rejected` → `draft`, motif conservé |
+  | Supprimer | `DELETE /api/articles/{id}` | Auteur journaliste : suppression de son brouillon |
 
-Depuis la racine du dépôt, copier les configurations d'exemple :
+  Les transitions invalides sont refusées ; le motif de refus est consultable par l'auteur et le rédacteur en chef.
+
+### Interface React
+
+- Liste publique des articles publiés : titre, chapô, rubrique, auteur, date, pagination, recherche par titre, filtre par rubrique et tri par date. États de chargement, d'erreur et de liste vide ; filtres applicables et réinitialisables avec retour à la première page.
+- Détail public `/articles/:id` : contenu complet, retour à la liste et message commun pour un article introuvable ou inaccessible.
+- Connexion avec affichage des erreurs, récupération du profil par JWT, déconnexion et routes protégées selon `ROLE_JOURNALIST` / `ROLE_EDITOR`.
+- JWT conservé **en mémoire uniquement** ; expiration contrôlée automatiquement et au retour sur l'onglet ; cache TanStack Query vidé lors des changements de session.
+- Espace journaliste `/journalist` : liste paginée de ses articles, quatre statuts, états vide/erreur/chargement et possibilité de réessayer.
+- Création `/journalist/articles/new` : formulaire titre, chapô facultatif, contenu et rubrique ; envoi avec JWT ; erreurs de validation conservant les champs ; formulaire désactivé pendant l'envoi ; retour à la liste et invalidation du cache après succès.
+- Détail personnel `/journalist/articles/:id` : article complet et motif de refus si présent. Modification proposée uniquement pour un brouillon appartenant au journaliste connecté ; formulaire prérempli, enregistrement `PATCH` en JSON Merge Patch avec JWT, confirmation, mise à jour des caches, gestion des erreurs `422` et annulation sans requête.
+- Appels API centralisés dans `front/src/api/articles.ts` et `front/src/api/auth.ts`. Les autorisations réelles restent vérifiées par Symfony, même si le front masque les actions interdites.
+
+## Installation et démarrage
+
+**Prérequis :** Docker Desktop, Git, Node.js et npm (versions utilisées : Node 22.22.0 et npm 10.9.4).
+
+Depuis la racine du dépôt, créer les fichiers locaux :
 
 ```powershell
 Copy-Item .env.example .env
 Copy-Item api/.env.example api/.env.local
 ```
 
-Choisir un mot de passe PostgreSQL et le renseigner dans :
-
-- `POSTGRES_PASSWORD` du fichier `.env` :
-- `DATABASE_URL` du fichier `api/.env.local` :
-
-Utiliser le même mot de passe pour les deux fichiers.
-Si le mot de passe contient des caractères réservés aux URL,
-encoder ces caractères dans `DATABASE_URL`.
-
-Construire et démarrer les conteneurs :
+Renseigner le même mot de passe PostgreSQL dans `POSTGRES_PASSWORD` (`.env`) et `DATABASE_URL` (`api/.env.local`). Encoder les caractères réservés aux URL dans `DATABASE_URL` si nécessaire.
 
 ```powershell
 docker compose up -d --build
-```
-
-Installer les dépendances PHP :
-
-```powershell
 docker compose exec php composer install
 ```
 
-Générer un secret pour Symfony :
+Générer **deux secrets distincts** avec cette commande (à exécuter deux fois) :
 
 ```powershell
 docker compose exec php php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
 ```
 
-Renseigner le résultat dans `APP_SECRET` du fichier `api/.env.local`.
-
-Générer une autre valeur pour protéger la clé privée JWT :
-
-```powershell
-docker compose exec php php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
-```
-
-La renseigner dans `JWT_PASSPHRASE` du fichier `api/.env.local`.
-
-Générer les clés JWT :
+Placer le premier dans `APP_SECRET` et le second dans `JWT_PASSPHRASE` de `api/.env.local`, puis initialiser l'API :
 
 ```powershell
 docker compose exec php php bin/console lexik:jwt:generate-keypair --skip-if-exists
-```
-
-Les clés et les configurations locales sont ignorées par Git.
-
-Créer les tables :
-
-```powershell
 docker compose exec php php bin/console doctrine:migrations:migrate
-```
-
-Charger les trois utilisateurs, les cinq rubriques et les trente articles
-de démonstration :
-
-```powershell
 docker compose exec php php bin/console doctrine:fixtures:load
 ```
 
-Attention : cette commande supprime les données existantes avant de charger les fixtures.
+**Attention :** le chargement des fixtures remplace les données existantes. Les clés JWT et fichiers locaux sont ignorés par Git.
 
-## Démarrage du front
-
-Après l'installation de l'API, ouvrir un deuxième terminal depuis
-la racine du dépôt :
+Démarrer le front dans un deuxième terminal :
 
 ```powershell
 cd front
@@ -199,627 +85,94 @@ npm ci
 npm run dev
 ```
 
-Le front est accessible sur <http://localhost:5173>.
-Garder ce terminal ouvert pendant le développement.
+- Front : <http://localhost:5173>
+- API : <http://127.0.0.1:8000>
+- Le proxy Vite transmet `/api` à Symfony en développement ; une configuration spécifique sera nécessaire en production.
 
-Vite transmet les requêtes commençant par `/api` à Symfony sur
-<http://127.0.0.1:8000>. Les conteneurs de l'API doivent être démarrés.
+Pour arrêter : `Ctrl+C` dans le terminal Vite, puis `docker compose down` à la racine. Le volume PostgreSQL conserve les données.
 
-Le proxy est réservé au développement. Le déploiement du front compilé
-nécessitera une configuration du routage vers l'API.
+## Utilisation de l'API
 
-## Vérifications
+`GET /api/articles` accepte les paramètres combinables suivants :
+
+| Paramètre | Exemple |
+| --- | --- |
+| `category` | `category=/api/categories/1` |
+| `author` | `author=1` |
+| `status` | `status=published` |
+| `title` | `title=article` |
+| `order[publishedAt]` | `order[publishedAt]=desc` |
+| `page` | `page=2` |
+
+Exemple : `GET /api/articles?status=published&title=article&order%5BpublishedAt%5D=desc`.
+
+Les filtres ne contournent jamais les droits d'accès. La liste personnelle du journaliste utilise son identifiant comme filtre `author`, transmet le JWT et n'impose aucun statut.
+
+### Comptes de démonstration
+
+| Profil | Email | Mot de passe |
+| --- | --- | --- |
+| Rédacteur en chef | `editor@example.test` | `password123` |
+| Journaliste 1 | `journalist1@example.test` | `password123` |
+| Journaliste 2 | `journalist2@example.test` | `password123` |
+
+Comptes réservés au développement local. Les JWT expirent après **1 heure**.
+
+## Vérifications et tests
+
+### API
+
+Pour vérifier la configuration :
 
 ```powershell
 docker compose exec php php bin/console about
 docker compose exec php php bin/console doctrine:schema:validate
 ```
 
-Depuis le dossier `front`, vérifier TypeScript, la compilation et ESLint :
-
-```powershell
-npm run build
-npm run lint
-```
-
-La communication avec l'API a été vérifiée par une requête sur
-`http://localhost:5173/api/articles` : seuls les articles publiés
-sont renvoyés sans authentification.
-
-## Arrêt
-
-Arrêter le serveur Vite avec `Ctrl+C` dans son terminal.
-Depuis la racine du dépôt, arrêter ensuite les conteneurs :
-
-```powershell
-docker compose down
-```
-
-Les données PostgreSQL sont conservées dans un volume Docker.
-
-## Limites actuelles
-
-Le serveur PHP intégré est utilisé uniquement pour le développement.
-L'API est accessible sur <http://127.0.0.1:8000>.
-
-La lecture des articles, le filtrage de leur visibilité et la création
-de brouillons par les journalistes sont implémentés.
-La modification est autorisée pour l'auteur d'un brouillon
-et pour le rédacteur en chef sur les articles soumis.
-L'auteur journaliste peut soumettre son brouillon pour validation.
-
-Le front permet de consulter la liste et le détail des articles publiés
-sans connexion. La liste propose une recherche par titre, un filtre
-par rubrique et un tri par date de publication.
-
-La session est conservée uniquement en mémoire : un rechargement de la page
-nécessite une nouvelle connexion. Aucun mécanisme de refresh token n'est implémenté.
-
-Les espaces journaliste et rédacteur en chef sont accessibles selon le rôle.
-Le journaliste peut consulter la liste paginée de ses articles, leur statut
-et leur détail depuis les titres cliquables.
-
-La création de brouillons et la modification de ses propres brouillons
-sont disponibles depuis le front.
-Les articles soumis, publiés ou refusés ne proposent pas de bouton
-de modification au journaliste. Un article refusé devra être repris
-en brouillon avant de pouvoir être modifié.
-
-La suppression et les transitions de statut restent à développer
-dans le front, ainsi que la gestion des rubriques et les fonctions
-de relecture du rédacteur en chef.
-L'espace rédacteur en chef affiche encore une page d'accueil provisoire.
-La couverture des tests API et front reste à compléter.
-
-L'installation depuis un clone vierge reste à vérifier.
-
-## Filtre et tri des articles
-
-La collection `GET /api/articles` accepte les paramètres suivants :
-
-| Paramètre | Description | Exemple |
-| --- | --- | --- |
-| `category` | Filtrage par IRI de rubrique | `category=/api/categories/1` |
-| `author` | Filtrage par identifiant numérique de l'auteur | `author=1` |
-| `status` | Filtrage par statut | `status=published` |
-| `title` | Recherche partielle sur le titre | `title=article` |
-| `order[publishedAt]` | Tri par date de publication | `order[publishedAt]=desc` |
-| `page` | Page actuelle | `page=2` |
-
-Les paramètres peuvent être combinés. Par exemple :
-
-`GET /api/articles?status=published&title=article&order%5BpublishedAt%5D=desc`
-
-Les filtres respectent les droits de visibilité : un visiteur ne peut
-consulter que les articles publiés, même en demandant un autre statut.
-Un journaliste peut consulter les articles publiés et ses propres articles
-privés. Le rédacteur en chef peut consulter tous les articles.
-
-L'espace journaliste combine le filtre `author` avec l'identifiant du compte
-connecté et transmet son JWT à l'API.
-Le filtre par auteur ne donne aucun droit supplémentaire : les restrictions
-de visibilité restent appliquées côté serveur.
-
-Sans paramètre de tri, les articles sont ordonnés par date de publication
-décroissante, puis par identifiant décroissant. La pagination contient
-10 articles par page.
-
-## Tests
-
-### Tests API automatisés
-
-Les tests utilisent PHPUnit et ApiTestCase d'API Platform.
-Ils s'exécutent dans l'environnement test sur la base la_redaction_test.
-
-Après l'installation du projet et la génération des clés JWT,
-créer api/.env.test.local avec DATABASE_URL et JWT_PASSPHRASE,
-en reprenant les valeurs locales utilisées pendant l'installation.
-Reprendre également les chemins JWT si ceux-ci ont été personnalisés.
-
-DATABASE_URL doit conserver le nom la_redaction :
-Doctrine ajoute automatiquement le suffixe _test.
-Le fichier api/.env.test.local est ignoré par Git.
-
-Préparer la base de test :
+Les tests utilisent la base `la_redaction_test`. Créer `api/.env.test.local` avec `DATABASE_URL` et `JWT_PASSPHRASE` (et les chemins JWT personnalisés, le cas échéant). Conserver `la_redaction` dans l'URL : Doctrine ajoute `_test`. Ce fichier est ignoré par Git.
 
 ```powershell
 docker compose exec php php bin/console doctrine:database:create --env=test --if-not-exists
 docker compose exec php php bin/console doctrine:migrations:migrate --env=test --no-interaction
 docker compose exec php php bin/console doctrine:fixtures:load --env=test --no-interaction
-```
-
-Le chargement des fixtures supprime les données de la base de test.
-
-Lance tous les tests :
-
-```powershell
 docker compose exec php php bin/phpunit
 ```
 
-Résultat vérifié : 14 tests, 260 assertions.
+**Résultat documenté : 14 tests, 260 assertions.** Les tests couvrent notamment visibilité et pagination, filtres et tri, soumission, publication, refus, reprise, suppression, droits d'accès et transitions interdites. DAMADoctrineTestBundle annule les modifications entre les tests ; les réponses d'erreur attendues (`403`, `404`, `422`) ne constituent pas des échecs.
 
-Les tests couvrent :
+**Vérifications manuelles effectuées :** rubriques (lecture, création, modification, validation, suppression) ; articles (fixtures, slugs uniques, dates) ; visibilité selon les rôles ; création et modification autorisées ou refusées ; soumission, publication, refus avec motif, reprise et suppression ; conservation des données après opérations interdites. Les codes `200`, `201`, `204`, `400`, `401`, `403`, `404` et `422` ont été contrôlés selon les scénarios. Les listes de deux journalistes ont été parcourues sans fuite d'articles privés. Les quantités constatées après manipulations locales peuvent différer des fixtures initiales.
 
-- La lecture publique des articles publiés et les champs exposés ;
-- La réponse 404 sur un brouillon consulté par un visiteur ;
-- La soumission d'un brouillon par son auteur ;
-- La publication d'un article soumis par le rédacteur ;
-- Le refus de publication par un journaliste ;
-- Le refus de publication directe d'un brouillon ;
-- Le refus d'un article soumis avec motif nettoyé et visible par l'auteur ;
-- La reprise d'un article refusé avec conservation du motif ;
-- Le refus d'une deuxième reprise ;
-- La suppression d'un brouillon par son auteur ;
-- Filtrage public sur le statut brouillon sans divulgation d'articles privés ;
-- Combinaison des filtres par rubrique, statut et titre ;
-- Tri chronologique et antéchronologique sur l'ensemble des pages ;
-- Filtrage des brouillons d'un journaliste limité à ses propres articles ;
-- Filtrage par auteur avec vérification des résultats sur toutes les pages ;
-- Accès aux articles de l'auteur connecté, tous statuts confondus ;
-- Accès limité aux articles publiés d'un autre auteur pour un journaliste
-  ou un visiteur.
+### Front
 
-DAMADoctrineTestBundle annule les modifications après chaque test.
-Les tests retrouvent les articles sans dépendre de leurs identifiants numériques.
-Les messages de journalisation des réponses 403, 404 et 422 attendues
-ne constituent pas des échecs de test.
-
-Vérifications manuelles de la publication des articles :
-
-- publication d'un article soumis par le rédacteur en chef : 200 ;
-- passage du statut published et date de publication renseignée ;
-- conservation de l'auteur, du titre, du corps, du slug et de createdAt ;
-- actualisation de updatedAt ;
-- consultation sans connexion après publication ;
-- deuxième publication refusée : 422 ;
-- publication directe d'un brouillon refusée : 422 ;
-- dates de l'article publié conservées après ces refus ;
-- brouillon resté non publié après la tentative refusée ;
-- publication par le journaliste auteur d'un article soumis refusée : 403 ;
-- article soumis inchangé après ce refus.
-
-Les nombres d'articles indiqués ci-dessous correspondent aux fixtures initiales,
-avant les créations effectuées pendant les vérifications manuelles.
-
-Vérifications manuelles effectuées pour les rubriques :
-
-- lecture publique : 200 ;
-- création par le rédacteur en chef avec génération du slug ;
-- création par un journaliste refusée : 403 ;
-- modification du nom avec conservation du slug ;
-- nom vide refusé : 422 ;
-- suppression : 204, puis consultation : 404 ;
-- chargement des cinq rubriques par les fixtures.
-
-Vérifications manuelles effectuées pour le modèle Article :
-
-- schéma PostgreSQL synchronisé avec les entités ;
-- chargement de 30 articles : 8 brouillons, 8 soumis, 7 publiés et 7 refusés ;
-- génération des slugs distincts pour deux titres identiques ;
-- cohérence des dates, des dates de publication et de motifs de refus.
-
-Vérifications manuelles de la visibilité des articles :
-
-- un visiteur voit uniquement les 7 articles publiés ;
-- un visiteur reçoit 404 sur un brouillon existant ;
-- l'auteur peut consulter son brouillon ;
-- un autre journaliste reçoit 404 sur ce même brouillon ;
-- le rédacteur en chef accède au brouillon et aux 30 articles ;
-- toutes les pages des deux journalistes ont été parcourues,
-  sans doublon ni article privé d'un autre auteur.
-
-Vérifications manuelles de la création des articles :
-
-- création par un journaliste connecté : 201 ;
-- auteur connecté, statut brouillon, slug et dates attribués automatiquement ;
-- contenu complet présent dans la réponse de création ;
-- création sans connexion refusée : 401 ;
-- statut envoyé par le client refusé : 400 ;
-- titre trop court : 422 ;
-- contenu vide refusé : 422 ;
-- rubrique manquante refusée : 422.
-
-Vérifications manuelles de la modification des articles :
-
-- modification d'un brouillon par son auteur : 200 ;
-- conservation du slug, de l'auteur, du statut et de la date de création ;
-- actualisation de la date de modification ;
-- modification du brouillon par un autre journaliste refusée : 404 ;
-- statut envoyé par l'auteur refusé : 400 ;
-- titre vide refusé : 422 ;
-- absence de modification persistée après ces refus ;
-- modification d'un article soumis par le rédacteur en chef : 200 ;
-- modification d'un article publié ou d'un brouillon par le rédacteur
-  en chef refusée : 403 ;
-- modification d'un article soumis par son auteur refusée : 403.
-
-Vérifications manuelles de la soumission des articles :
-
-- soumission d'un brouillon par son auteur : 200 ;
-- passage au statut submitted et actualisation de updatedAt ;
-- conservation de l'auteur, du titre, du corps, du slug et de createdAt ;
-- absence de date de publication après soumission ;
-- deuxième soumission refusée : 422 ;
-- modification par l'auteur après soumission refusée : 403 ;
-- article inchangé après ces refus ;
-- soumission du brouillon par un visiteur ou un autre journaliste : 404 ;
-- soumission du brouillon par le rédacteur en chef refusée : 403.
-
-Vérifications manuelles du refus des articles :
-
-- refus d'un article soumis par le rédacteur en chef : 200 ;
-- passage du statut rejected et motif enregistré sans espaces autour ;
-- absence de date de publication ;
-- consultation du motif par l'auteur dans le détail de l'article ;
-- motif absent, vide ou composé d'espaces refusé : 422 ;
-- deuxième refus d'un article déjà refusé : 422 ;
-- refus d'un brouillon ou d'un article publié : 422 ;
-- motif initial conservé après une deuxième tentative de refus ;
-- refus par le journaliste auteur d'un article soumis : 403 ;
-- article soumis inchangé après cette tentative interdite.
-
-Vérifications manuelles de la reprise des articles :
-
-- reprise d'un article refusé par son auteur : 200 ;
-- retour au statut draft et motif conservé et visible ;
-- conservation de l'auteur, du titre, du corps, du slug et de createdAt ;
-- actualisation de updatedAt et absence de date de publication ;
-- deuxième reprise refusée : 422 ;
-- reprise par un visiteur ou un autre journaliste : 404 ;
-- reprise par le rédacteur en chef refusée : 403 ;
-- statut, motif et date de modification conservés après ces refus.
-
-Vérification manuelle de la suppression des articles :
-
-- suppression d'un brouillon par son auteur : 204 ;
-- consultation après suppression : 404 ;
-- suppression du brouillon par un visiteur ou un autre journaliste : 404 ;
-- suppression du brouillon par le rédacteur en chef : 403 ;
-- brouillon inchangé après les tentatives interdites ;
-- suppression de son article publié par un journaliste : 403 ;
-- article publié et dates conservés après cette tentative.
-
-Vérification manuelle de la liste publique du front :
-
-- affichage des articles publiés avec leurs informations ;
-- accents et dates affichés correctement ;
-- boutons de pagination désactivés lorsque la liste tient sur une page ;
-- message d'erreur affiché lorsque l'API est arrêtée ;
-- récupération des articles après redémarrage de l'API et nouvelle tentative.
-
-Vérification manuelle des filtres dans le front :
-
-- recherche par titre avec affichage du résultat correspondant ;
-- filtrage par rubrique avec affichage des articles de Culture ;
-- tri par date de publication dans les deux sens ;
-- réinitialisation de la recherche, de la rubrique et du tri ;
-- retour à la liste des articles publiés après réinitialisation.
-
-Vérification manuelle du détail des articles dans le front :
-
-- ouverture du détail d'un article publié ;
-- affichage du titre, du chapô, du corps, de la rubrique et de l'auteur ;
-- affichage de la date de publication ;
-- présence d'un lien de retour à la liste ;
-- message « Article introuvable ou inaccessible. » pour un identifiant
-  inexistant et un brouillon consulté sans connexion.
-
-Vérification manuelle de l'espace journaliste :
-
-- affichage de la liste personnelle pour les deux comptes journalistes ;
-- affichage de 17 articles pour Journaliste 1 et de 15 pour Journaliste 2
-  dans la base locale utilisée pour cette vérification ;
-- affichage des statuts brouillon, soumis, publié et refusé ;
-- accès à la deuxième page pour les deux comptes ;
-- bouton « Précédent » désactivé sur la première page ;
-- bouton « Suivant » désactivé sur la dernière page ;
-- affichage d'une liste différente après changement de compte.
-
-Ces nombres correspondent à la base locale après les manipulations manuelles
-et ne constituent pas les nombres attendus après un chargement neuf des fixtures.
-
-Vérification manuelle de la création depuis le front :
-
-- ouverture du formulaire depuis le lien « Créer un article » ;
-- saisie du titre, du chapô, du contenu et sélection de la rubrique Culture ;
-- enregistrement de l'article « Une nouvelle bibliothèque ouvre ses portes » ;
-- retour automatique à la liste personnelle ;
-- affichage du nouvel article avec le statut Brouillon ;
-- passage du compteur de 17 à 18 articles pour Journaliste 1.
-
-Vérification manuelle du détail personnel et de la modification depuis le front :
-
-- consultation du détail du brouillon créé avec le compte Journaliste 1 ;
-- affichage du titre, du chapô, du contenu, de la rubrique et de l'auteur ;
-- ouverture du formulaire de modification avec les données préremplies ;
-- ajout d'une phrase dans le contenu ;
-- enregistrement avec affichage du message de confirmation ;
-- affichage du contenu actualisé après l'enregistrement ;
-- maintien du statut Brouillon.
-
-La couverture automatisée côté API reste à compléter, notamment pour la
-création, la modification, les validations et les autres combinaisons
-de permissions. Les tests front de création, de détail personnel et de
-modification utilisent des réponses API simulées.
-
-### Tests front automatisés
-
-Les tests utilisent Vitest 4.1 et React Testing Library, avec jsdom
-pour simuler l'environnement du navigateur.
-
-Depuis le dossier `front`, lancer les tests :
+Depuis `front` :
 
 ```powershell
 npm test
-```
-
-Pour relancer automatiquement les tests pendant le développement :
-
-```powershell
 npm run test:watch
+npm run build
+npm run lint
 ```
 
-Résultat vérifié : 26 tests réussis dans 8 fichiers.
+**Résultat documenté : 26 tests réussis dans 8 fichiers**, avec Vitest et React Testing Library. Ils vérifient la liste publique, la pagination, les filtres, le détail et les `404`, la connexion et les rôles, l'expiration JWT, la liste personnelle, la création et la modification de brouillons, les erreurs `422`, l'annulation et la cohérence du cache. Les appels API sont simulés : ces tests ne nécessitent pas Symfony ni la base PostgreSQL. Compilation TypeScript et lint vérifiés.
 
-Les tests couvrent :
-
-- l'affichage du message de liste vide et la désactivation des boutons ;
-- le passage à la page suivante et le retour à la page précédente ;
-- la présence du numéro de page et l'appel API pour la deuxième page ;
-- L'affichage du contenu complet d'un article publié ;
-- L'affichage du message « Article introuvable ou inaccessible. »
-  lorsque l'API répond 404 ;
-- L'envoi combiné du titre, de la rubrique et du tri à l'API ;
-- Le retour à la première page lors de l'application des filtres ;
-- La réinitialisation des champs et le retour à la liste initiale ;
-- L'affichage d'une erreur lorsque les identifiants sont refusés ;
-- La connexion, l'envoi du JWT pour récupérer le profil et la déconnexion ;
-- La redirection d'un visiteur vers la connexion sur une route protégée ;
-- Le refus d'accès avec un rôle non autorisé et l'accès avec le rôle attendu ;
-- Le maintien de la session avant expiration, puis le retour à la connexion
-  et la suppression des données du cache à l'expiration du JWT ;
-- L'affichage des quatre statuts dans la liste personnelle du journaliste ;
-- L'envoi de l'identifiant de l'auteur et du JWT pour charger ses articles ;
-- La pagination de la liste personnelle avec conservation du filtre par auteur ;
-- L'affichage d'une liste personnelle vide avec les boutons désactivés ;
-- L'affichage d'une erreur API, puis le chargement réussi après une nouvelle tentative.
-- L'envoi des quatre champs de création avec le JWT, sans auteur ni statut ;
-- Le retour à la liste personnelle après une création réussie ;
-- L'invalidation du cache de la liste personnelle après création ;
-- L'affichage du message de validation renvoyé par une réponse 422 ;
-- La conservation des champs et la possibilité de réessayer après cet échec ;
-- L'absence d'invalidation du cache lorsque la création échoue ;
-- Le chargement du détail personnel avec transmission du JWT ;
-- L'affichage du contenu complet d'un brouillon ;
-- L'affichage du motif de refus sans bouton de modification ;
-- L'absence du bouton de modification pour les articles soumis ou publiés ;
-- L'absence du bouton de modification pour un brouillon d'un autre auteur
-  dans une réponse simulée ;
-- L'affichage d'une erreur lorsque le détail personnel renvoie 404 ;
-- Le préremplissage du formulaire de modification ;
-- L'envoi des champs nettoyés avec le JWT et le format JSON Merge Patch ;
-- L'affichage du détail actualisé et d'une confirmation après enregistrement ;
-- La mise à jour du cache du détail et l'invalidation de la liste personnelle ;
-- La conservation des champs et des caches après une réponse de validation 422 ;
-- L'annulation sans requête PATCH et le rétablissement des valeurs
-  enregistrées à la réouverture du formulaire.
-
-Les réponses de l'API sont simulées dans ces tests. Ces tests ne nécessitent pas le démarrage
-de Symfony et ne modifient pas la base de données.
-
-La compilation TypeScript et le lint ont également été vérifiés avec `npm run build` et `npm run lint`.
-
-## Comptes de démonstration
-
-| Profil | Email | Mot de passe |
-| --- | --- | --- |
-| Rédacteur en chef | `editor@example.test` | password123 |
-| Journaliste 1 | `journalist1@example.test` | password123 |
-| Journaliste 2 | `journalist2@example.test` | password123 |
-
-Ces identifiants sont publics et réservés au développement local.
-Les JWT expirent après 1 heure.
+**Vérifications manuelles effectuées :** consultation publique, filtres, tri et détail ; récupération après erreur API ; liste et pagination des deux journalistes ; création d'un brouillon avec retour à la liste ; détail personnel, modification préremplie, confirmation et contenu mis à jour. Le proxy `/api/articles` a également été vérifié sans authentification.
 
 ## Choix techniques
 
-- Docker permet d'exécuter PHP et PostgreSQL sans installation locale.
-- Doctrine gère la persistance et les migrations de la base.
-- API Platform expose les ressources et contrôle leurs opérations.
-- React 19 est installé dans le dossier front avec Vite.
-- TypeScript en mode strict vérifie les types pendant la compilation.
-- ESLint vérifie le code du front.
+- Doctrine gère les entités, migrations et dates ; des listeners produisent les slugs, et une extension Doctrine filtre la visibilité avant pagination.
+- API Platform expose les ressources, groupes de sérialisation et filtres (`IriFilter`, `ExactFilter`, `PartialSearchFilter`, `SortFilter`) ; processors et Voter encadrent les opérations et transitions.
+- React Router gère les pages ; React Context partage la session ; TanStack Query gère requêtes, erreurs et cache (clés distinctes par utilisateur, article, page et filtres).
+- `URLSearchParams` encode les filtres ; React échappe le texte affiché ; TypeScript 5.9.3 et le `package-lock.json` stabilisent l'environnement du front.
+- L'audit npm initial signalait 12 alertes modérées dans les dépendances de développement ESLint/minimatch et aucune vulnérabilité hors dépendances de développement à cette étape ; audit à actualiser après ajout des outils de test.
 
-TanStack Query gère le chargement, le cache et les erreurs des appels API.
-La page courante et les filtres appliqués font partie de la clé de requête
-pour distinguer les résultats.
+## Limites et prochaines étapes
 
-Les champs du formulaire sont appliqués avec le bouton « Appliquer ».
-L'application ou la réinitialisation des filtres ramène à la première page.
-Les rubriques sont récupérées depuis l'API, en parcourant leur pagination.
-
-Les appels HTTP sont regroupés dans `front/src/api/articles.ts`.
-Les paramètres sont encodés avec URLSearchParams et les requêtes utilisent
-le proxy Vite en développement.
-
-React Router associe la liste à `/` et le détail à `/articles/:id`.
-Les deux pages sont séparées dans `ArticleListPage.tsx` et
-`ArticleDetailPage.tsx`.
-
-La session est partagée entre les composants avec React Context.
-Le JWT est conservé en mémoire et le profil est récupéré depuis `/api/me`.
-Les appels de connexion et de récupération du profil sont regroupés
-dans `front/src/api/auth.ts`.
-
-Les routes `/journalist` et `/editor` contrôlent respectivement les rôles
-ROLE_JOURNALIST et ROLE_EDITOR. Ces contrôles organisent la navigation ;
-les autorisations sur les données restent vérifiées par Symfony.
-
-La page `JournalistDashboardPage.tsx` charge les articles du journaliste
-avec la fonction `getOwnArticles` de `front/src/api/articles.ts`.
-La requête transmet le JWT et les paramètres `author` et `page`.
-Aucun filtre de statut n'est imposé afin de retrouver tous ses articles.
-
-L'identifiant de l'utilisateur et la page font partie de la clé de requête
-TanStack Query. Le filtrage par auteur et la pagination sont réalisés
-par l'API.
-
-La route `/journalist/articles/new` est protégée par le rôle ROLE_JOURNALIST.
-La page `ArticleCreatePage.tsx` charge les rubriques et utilise une mutation
-TanStack Query pour envoyer le formulaire avec la fonction `createArticle`.
-
-Seuls le titre, le chapô, le corps et l'IRI de la rubrique sont envoyés.
-L'auteur, le statut brouillon, le slug et les dates sont déterminés côté API.
-
-Après une création réussie, les requêtes `own-articles` sont invalidées
-et le journaliste est redirigé vers sa liste personnelle.
-En cas d'erreur, les messages de validation sont affichés et les champs
-restent remplis pour permettre une correction.
-
-La route `/journalist/articles/:id` est protégée par le rôle ROLE_JOURNALIST.
-La page `JournalistArticleDetailPage.tsx` utilise `getAuthenticatedArticle`
-pour charger le détail avec le JWT.
-L'identifiant du compte connecté et celui de l'article font partie
-de la clé de cache `journalist-article`.
-
-Le bouton de modification est affiché uniquement lorsque l'article
-est un brouillon appartenant au journaliste connecté.
-Les permissions restent contrôlées côté API : masquer un bouton
-ne remplace pas une autorisation serveur.
-
-Le composant `ArticleEditForm.tsx` préremplit les champs et charge
-les rubriques depuis l'API.
-La fonction `updateArticle` envoie une requête PATCH avec le type
-`application/merge-patch+json` et le JWT.
-Seuls le titre, le chapô, le corps et l'IRI de la rubrique sont transmis.
-
-Après une modification réussie, la réponse de l'API remplace les données
-du détail dans le cache et les requêtes `own-articles` sont invalidées.
-Le formulaire se ferme et une confirmation est affichée.
-En cas d'erreur de validation, les champs restent remplis.
-L'annulation ferme le formulaire sans envoyer de modification.
-
-Le champ `exp` du JWT permet de programmer la déconnexion automatique.
-L'expiration est également contrôlée au retour sur l'onglet.
-La vérification de la signature du token reste assurée par l'API.
-Le cache TanStack Query est vidé lors de la connexion, de la déconnexion
-et de l'expiration pour éviter de conserver les données d'une autre session.
-
-Le détail est chargé depuis l'API avec l'identifiant présent dans l'URL.
-Une réponse API 404 affiche le même message pour un article inexistant
-ou inaccessible. Le contrôle des droits reste assuré par Symfony.
-Le corps de l'article est affiché comme du texte, avec l'échappement
-fourni par React.
-
-TypeScript utilise la version 5.9.3 pour respecter la compatibilité
-avec typescript-eslint. Le fichier package-lock.json conserve les versions
-résolues des dépendances.
-
-Lors de l'installation initiale du front, l'audit npm signalait
-12 alertes modérées dans la chaîne ESLint, liées à minimatch.
-À cette étape, l'audit sans les dépendances de développement ne signalait
-aucune vulnérabilité. L'audit reste à actualiser après l'ajout
-des outils de test.
-
-Les visiteurs peuvent consulter les rubriques pour filtrer les articles.
-La création, la modification et la suppression nécessitent ROLE_EDITOR.
-Ces permissions sont vérifiées côté API Platform.
-
-Le client peut modifier uniquement le nom.
-Un listener Doctrine génère le slug à la création, y compris pour les fixtures.
-Le slug reste stable lorsque le nom change afin de conserver les URL.
-Les contraintes uniques PostgreSQL empêchent les doublons.
-
-Les filtres utilisent les paramètres `QueryParameter` d'API Platform et
-les filtres Doctrine intégrés : `IriFilter`, `ExactFilter`,
-`PartialSearchFilter` et `SortFilter`. Cela évite une implémentation
-spécifique pour les recherches courantes. Les restrictions de visibilité
-sont appliquées à la requête avant la pagination, afin que les résultats
-et le total annoncé respectent les droits de l'utilisateur.
-
-### Articles
-
-Une énumération PHP définit les quatre statuts possibles :
-draft, submitted, published et rejected.
-Elle limite les valeurs possibles.
-Les transitions de draft vers submitted, submitted vers published
-et submitted vers rejected sont implémentées.
-La transition de rejected vers draft permet à l'auteur de reprendre
-un article refusé pour le corriger, tout en conservant le motif visible.
-
-Un listener Doctrine génère les slugs à partir des titres.
-Il vérifie les slugs existants et ceux réservés pendant le chargement en cours.
-Un suffixe permet de distinguer les articles portant le même titre.
-Le slug reste stable lorsque le titre change.
-
-Les callbacks Doctrine initialisent createdAt et updatedAt à la création,
-puis actualisent updatedAt lors d'une modification.
-Les fixtures peuvent fournir des dates historiques.
-
-Une extension Doctrine filtre les articles accessibles selon l'utilisateur,
-pour les listes comme pour les détails, avant la pagination.
-Un article inaccessible est exclu des résultats et sa consultation renvoie 404.
-
-Les groupes de sérialisation contrôlent les champs renvoyés.
-Le corps est réservé au détail ; l'auteur expose uniquement son identifiant
-et son nom affiché.
-
-Un processor attribue automatiquement l'auteur connecté et impose
-le statut brouillon avant l'enregistrement par Doctrine.
-
-Seuls le titre, le chapô, le corps et la rubrique sont acceptés
-dans la requête de création grâce au groupe article:write.
-Les champs supplémentaires sont refusés.
-
-La réponse de création contient aussi le corps de l'article,
-comme la consultation du détail.
-
-L'opération PATCH utilise un Voter pour vérifier les permissions
-avant d'appliquer les modifications.
-Un journaliste peut modifier uniquement ses propres brouillons.
-Le rédacteur en chef peut modifier uniquement les articles soumis.
-Les champs modifiables sont le titre, le chapô, le corps et la rubrique.
-Les champs supplémentaires sont refusés.
-
-La soumission utilise un processor et la permission ARTICLE_SUBMIT du Voter.
-Seul l'auteur journaliste peut soumettre son article au statut draft.
-Cette action ne nécessite aucun corps JSON.
-
-L'article est chargé par le provider Doctrine avec filtrage de visibilité.
-L'option throwOnNotFound impose une réponse 404 si l'article est introuvable
-ou inaccessible, y compris sur cette opération POST.
-
-Pour la soumission, le Voter vérifie le rôle et l'identité de l'auteur.
-Le processor vérifie que l'article est en brouillon.
-Une transition de soumission invalide renvoie 422.
-
-Le refus utilise la permission ARTICLE_REJECT du Voter.
-Le processor vérifie le statut submitted, nettoie le motif obligatoire
-et applique le statut rejected. Une transition invalide renvoie 422.
-
-Le motif est modifiable uniquement par l'opération de refus.
-Dans le détail, sa consultation est réservée à l'auteur et au rédacteur
-en chef grâce à une condition de sécurité sur la propriété.
-
-La reprise utilise la permission ARTICLE_RESUME du Voter.
-Le Voter contrôle le rôle journaliste et l'identité de l'auteur.
-Le processor exige le statut rejected, puis applique le statut draft
-sans effacer le motif. Une transition invalide renvoie 422.
-Cette action ne nécessite aucun corps JSON.
-
-La suppression utilise la permission ARTICLE_DELETE du Voter
-et le mécanisme de suppression Doctrine fourni par API Platform.
-
-## Priorités pour la suite
-
-Ajouter dans le front la soumission des brouillons, la reprise des articles
-refusés et la suppression des brouillons.
-Développer ensuite l'espace rédacteur en chef : liste des articles soumis,
-consultation, modification, publication et refus avec motif.
-
-Compléter les tests des nouveaux parcours, améliorer la présentation
-des formulaires et de la navigation, puis vérifier la procédure
-d'installation depuis un clone vierge.
+- Le front ne propose pas encore la **soumission, la reprise, la suppression ni les autres transitions de statut** ; ces opérations existent déjà côté API.
+- L'espace rédacteur en chef est encore provisoire : développer sa liste des articles soumis, leur consultation et modification, la publication et le refus avec motif, ainsi que la gestion des rubriques dans l'interface.
+- Compléter les tests API (notamment création, modification, validations et permissions) et front ; améliorer formulaires et navigation.
+- La session n'est pas persistée après rechargement (pas de refresh token). Le serveur PHP intégré et le proxy Vite sont destinés au développement.
+- Vérifier l'installation depuis un clone vierge et actualiser l'audit npm.
 
 ## Temps passé
 
-86h
+90 h

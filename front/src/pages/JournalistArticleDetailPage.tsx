@@ -1,7 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import {
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { getAuthenticatedArticle } from "../api/articles";
+import {
+    getAuthenticatedArticle,
+    submitArticle,
+} from "../api/articles";
 import type { ArticleSummary } from "../api/articles";
 import ArticleEditForm from "./ArticleEditForm";
 import { useAuth } from "../auth/AuthContext";
@@ -18,6 +25,7 @@ export default function JournalistArticleDetailPage() {
     const { token, user } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [saved, setSaved] = useState(false);
+    const queryClient = useQueryClient();
 
     const {
         data: article,
@@ -38,6 +46,49 @@ export default function JournalistArticleDetailPage() {
         enabled: Boolean(id && token && user),
         retry: false,
     });
+
+    const submission = useMutation({
+        mutationFn: () => {
+            if (!id || !token || !user) {
+                throw new Error("Veuillez vous connecter.");
+            }
+
+            if (
+                !article
+                || article.status !== "draft"
+                || article.author.id !== user.id
+            ) {
+                throw new Error(
+                    "Vous pouvez soumettre uniquement vos propres brouillons.",
+                );
+            }
+
+            return submitArticle(id, token);
+        },
+        retry: false,
+        onSuccess: async (submittedArticle) => {
+            queryClient.setQueryData(
+                ["journalist-article", user?.id, id],
+                submittedArticle,
+            );
+
+            await queryClient.invalidateQueries({
+                queryKey: ["own-articles"],
+            });
+
+            setIsEditing(false);
+            setSaved(false);
+        },
+    });
+
+    function handleSubmitArticle() {
+        if (submission.isPending) {
+            return;
+        }
+
+        setSaved(false);
+        submission.mutate();
+    }
 
     return (
         <main className="page">
@@ -87,6 +138,16 @@ export default function JournalistArticleDetailPage() {
                         <p role="status">Les modifications ont été enregistrées.</p>
                     )}
 
+                    {submission.isSuccess && (
+                        <p role="status">
+                            L’article a été soumis au rédacteur en chef.
+                        </p>
+                    )}
+
+                    {submission.isError && (
+                        <p role="alert">{submission.error.message}</p>
+                    )}
+
                     {article.status === "draft"
                         && article.author.id === user?.id && (
                             isEditing ? (
@@ -100,17 +161,40 @@ export default function JournalistArticleDetailPage() {
                                     }}
                                 />
                             ) : (
-                                <p>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSaved(false);
-                                            setIsEditing(true);
-                                        }}
-                                    >
-                                        Modifier
-                                    </button>
-                                </p>
+                                <div>
+                                    <p>
+                                        Vous pouvez modifier ce brouillon ou le soumettre
+                                        au rédacteur en chef. Après soumission, vous ne
+                                        pourrez plus le modifier tant qu'il sera en attente
+                                        de validation.
+                                    </p>
+
+                                    <p>
+                                        <button
+                                            type="button"
+                                            disabled={submission.isPending}
+                                            onClick={() => {
+                                                setSaved(false);
+                                                submission.reset();
+                                                setIsEditing(true);
+                                            }}
+                                        >
+                                            Modifier
+                                        </button>
+
+                                        {" "}
+
+                                        <button
+                                            type="button"
+                                            disabled={submission.isPending}
+                                            onClick={handleSubmitArticle}
+                                        >
+                                            {submission.isPending
+                                                ? "Soumission..."
+                                                : "Soumettre"}
+                                        </button>
+                                    </p>
+                                </div>
                             )
                         )
                     }
