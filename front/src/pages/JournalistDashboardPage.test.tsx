@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import {
     cleanup,
     fireEvent,
@@ -52,7 +53,9 @@ function renderDashboard() {
                     signOut: vi.fn(),
                 }}
             >
-                <JournalistDashboardPage />
+                <MemoryRouter initialEntries={["/journalist"]}>
+                    <JournalistDashboardPage />
+                </MemoryRouter>
             </AuthContext.Provider>
         </QueryClientProvider>,
     );

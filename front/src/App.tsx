@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import RequireRole from "./auth/RequireRole";
 import JournalistDashboardPage from "./pages/JournalistDashboardPage";
 import EditorDashboardPage from "./pages/EditorDashboardPage";
+import ArticleCreatePage from "./pages/ArticleCreatePage";
 import AuthProvider from "./auth/AuthProvider";
 import "./App.css"
 
@@ -21,6 +22,10 @@ export default function App() {
                     <Route
                         path="/journalist"
                         element={<JournalistDashboardPage />}
+                    />
+                    <Route
+                        path="/journalist/articles/new"
+                        element={<ArticleCreatePage />}
                     />
                 </Route>
                 <Route element={<RequireRole role="ROLE_EDITOR" />}>

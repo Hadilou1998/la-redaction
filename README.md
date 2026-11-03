@@ -63,7 +63,7 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Chargement des données avec TanStack Query.
 - États de chargement, d'erreurs et de liste vide implémentés.
 - Boutons de pagination prévus pour parcourir les résultats.
-- Quinze tests front automatisés avec Vitest et React Testing Library.
+- Dix-sept tests front automatisés avec Vitest et React Testing Library.
 - Liste vide, pagination, contenu complet d'un article et réponse 404 vérifiées.
 - Navigation entre la liste et le détail avec React Router.
 - Titres des articles cliquables vers /articles/{id}.
@@ -84,12 +84,20 @@ Plateforme de gestion éditoriale réalisée dans le cadre d'un exercice techniq
 - Pagination de la liste personnelle avec chargement, erreur et liste vide.
 - Nouvelle tentative possible après une erreur de chargement.
 - Tests de la liste personnelle : statuts, auteur, JWT, pagination, liste vide et nouvelle tentative.
+- Création d'un brouillon depuis l'espace journaliste.
+- Formulaire avec titre, chapô facultatif, contenu et rubrique.
+- Envoi des données à l'API avec le JWT du journaliste.
+- Affichage des erreurs de validation avec conservation des champs saisis.
+- Désactivation du formulaire pendant l'enregistrement.
+- Retour à la liste personnelle après création et invalidation de son cache.
+- Tests de création réussie et de réponse de validation 422.
 
 Le front propose la consultation publique des articles, la connexion,
 la déconnexion et des routes protégées selon le rôle.
 L'espace journaliste affiche une liste paginée des articles du compte
 connecté, avec leur statut.
-La création, la modification et les transitions de statut depuis le front
+Le journaliste peut également créer un brouillon depuis un formulaire.
+La modification, la suppression et les transitions de statut depuis le front
 restent à développer.
 L'espace rédacteur en chef affiche encore une page d'accueil provisoire.
 La couverture des tests API et front reste à compléter.
@@ -240,8 +248,9 @@ Les espaces journaliste et rédacteur en chef sont accessibles selon le rôle.
 Le journaliste peut consulter la liste paginée de ses articles et leur statut.
 Les titres de cette liste ne donnent pas accès à un détail privé.
 
-La création, la modification, la suppression et les transitions de statut
-depuis le front restent à développer, ainsi que la gestion des rubriques.
+La création de brouillons est disponible depuis le front.
+La modification, la suppression et les transitions de statut
+restent à développer dans le front, ainsi que la gestion des rubriques.
 L'espace rédacteur en chef affiche encore une page d'accueil provisoire.
 La couverture des tests API et front reste à compléter.
 
@@ -492,8 +501,18 @@ Vérification manuelle de l'espace journaliste :
 Ces nombres correspondent à la base locale après les manipulations manuelles
 et ne constituent pas les nombres attendus après un chargement neuf des fixtures.
 
-La couverture automatisée reste à compléter, notamment pour la création,
-la modification, les validations et les autres combinaisons de permissions.
+Vérification manuelle de la création depuis le front :
+
+- ouverture du formulaire depuis le lien « Créer un article » ;
+- saisie du titre, du chapô, du contenu et sélection de la rubrique Culture ;
+- enregistrement de l'article « Une nouvelle bibliothèque ouvre ses portes » ;
+- retour automatique à la liste personnelle ;
+- affichage du nouvel article avec le statut Brouillon ;
+- passage du compteur de 17 à 18 articles pour Journaliste 1.
+
+La couverture automatisée côté API reste à compléter, notamment pour la
+création, la modification, les validations et les autres combinaisons
+de permissions. Les tests front de création utilisent des réponses API simulées.
 
 ### Tests front automatisés
 
@@ -512,7 +531,7 @@ Pour relancer automatiquement les tests pendant le développement :
 npm run test:watch
 ```
 
-Résultat vérifié : 15 tests réussis dans 6 fichiers.
+Résultat vérifié : 17 tests réussis dans 7 fichiers.
 
 Les tests couvrent :
 
@@ -536,6 +555,12 @@ Les tests couvrent :
 - La pagination de la liste personnelle avec conservation du filtre par auteur ;
 - L'affichage d'une liste personnelle vide avec les boutons désactivés ;
 - L'affichage d'une erreur API, puis le chargement réussi après une nouvelle tentative.
+- L'envoi des quatre champs de création avec le JWT, sans auteur ni statut ;
+- Le retour à la liste personnelle après une création réussie ;
+- L'invalidation du cache de la liste personnelle après création ;
+- L'affichage du message de validation renvoyé par une réponse 422 ;
+- La conservation des champs et la possibilité de réessayer après cet échec ;
+- L'absence d'invalidation du cache lorsque la création échoue.
 
 Les réponses de l'API sont simulées dans ces tests. Ces tests ne nécessitent pas le démarrage
 de Symfony et ne modifient pas la base de données.
@@ -595,6 +620,18 @@ Aucun filtre de statut n'est imposé afin de retrouver tous ses articles.
 L'identifiant de l'utilisateur et la page font partie de la clé de requête
 TanStack Query. Le filtrage par auteur et la pagination sont réalisés
 par l'API.
+
+La route `/journalist/articles/new` est protégée par le rôle ROLE_JOURNALIST.
+La page `ArticleCreatePage.tsx` charge les rubriques et utilise une mutation
+TanStack Query pour envoyer le formulaire avec la fonction `createArticle`.
+
+Seuls le titre, le chapô, le corps et l'IRI de la rubrique sont envoyés.
+L'auteur, le statut brouillon, le slug et les dates sont déterminés côté API.
+
+Après une création réussie, les requêtes `own-articles` sont invalidées
+et le journaliste est redirigé vers sa liste personnelle.
+En cas d'erreur, les messages de validation sont affichés et les champs
+restent remplis pour permettre une correction.
 
 Le champ `exp` du JWT permet de programmer la déconnexion automatique.
 L'expiration est également contrôlée au retour sur l'onglet.
@@ -719,4 +756,4 @@ les transitions de statut.
 
 ## Temps passé
 
-80h
+83h

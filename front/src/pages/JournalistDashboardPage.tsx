@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getOwnArticles } from "../api/articles";
 import type { ArticleSummary } from "../api/articles";
@@ -42,6 +43,12 @@ export default function JournalistDashboardPage() {
                 <h1>Mes articles</h1>
                 <p>Retrouvez vos articles et leur statut.</p>
             </header>
+
+            <p>
+                <Link to="/journalist/articles/new">
+                    Créer un article
+                </Link>
+            </p>
 
             {isPending && (
                 <p role="status">Chargement de vos articles...</p>

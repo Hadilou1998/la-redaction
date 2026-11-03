@@ -179,3 +179,67 @@ export async function getOwnArticles(
 
     return response.json();
 }
+
+export interface ArticleInput {
+    title: string;
+    chapo: string;
+    body: string;
+    category: string;
+}
+
+export async function createArticle(
+    input: ArticleInput,
+    token: string,
+) : Promise<ArticleDetail> {
+    const response = await fetch(`/api/articles`, {
+        method: "POST",
+        headers: {
+            Accept: "application/ld+json",
+            "Content-Type": "application/ld+json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(input),
+    });
+
+    if (response.status === 401) {
+        throw new Error("Votre session a expiré. Veuillez vous reconnecter.");
+    }
+
+    if (!response.ok) {
+        const fallback =
+            `Impossible de créer l'article (HTTP ${response.status}).`;
+
+        const data: unknown = await response.json().catch(() => null);
+
+        if (typeof data === "object" && data !== null) {
+            if ("violations" in data && Array.isArray(data.violations)) {
+                const messages = data.violations.flatMap(
+                    (violation: unknown) => {
+                        if (
+                            typeof violation === "object"
+                            && violation !== null
+                            && "message" in violation
+                            && typeof violation.message === "string"
+                        ) {
+                            return [violation.message];
+                        }
+
+                        return [];
+                    }
+                );
+
+                if (messages.length > 0) {
+                    throw new Error(messages.join(" "));
+                }
+            }
+
+            if ("detail" in data && typeof data.detail === "string") {
+                throw new Error(data.detail || fallback);
+            }
+        }
+
+        throw new Error(fallback);
+    }
+
+    return response.json();
+}
