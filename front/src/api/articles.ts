@@ -181,6 +181,41 @@ export async function getOwnArticles(
     return response.json();
 }
 
+export async function getSubmittedArticles(
+    token: string,
+    page: number,
+    signal?: AbortSignal,
+) : Promise<ArticleCollection> {
+    const parameters = new URLSearchParams({
+        status: "submitted",
+        page: String(page),
+    });
+
+    const response = await fetch(`/api/articles?${parameters}`, {
+        headers: {
+            Accept: "application/ld+json",
+            Authorization: `Bearer ${token}`,
+        },
+        signal,
+    });
+
+    if (response.status === 401) {
+        throw new Error("Votre session a expiré. Veuillez vous reconnecter.");
+    }
+
+    if (response.status === 403) {
+        throw new Error("Vous n'avez pas la permission d'accéder aux articles soumis.");
+    }
+
+    if (!response.ok) {
+        throw new Error(
+            `Impossible de charger vos articles soumis (HTTP ${response.status}).`,
+        );
+    }
+
+    return response.json();
+}
+
 export interface ArticleInput {
     title: string;
     chapo: string;

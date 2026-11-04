@@ -43,6 +43,7 @@ Plateforme de gestion éditoriale développée dans le cadre d'un exercice techn
 - Détail personnel `/journalist/articles/:id` : article complet et motif de refus si présent. Modification proposée uniquement pour un brouillon appartenant au journaliste connecté ; formulaire prérempli, enregistrement `PATCH` en JSON Merge Patch avec JWT, confirmation, mise à jour des caches, gestion des erreurs `422` et annulation sans requête.
 - Soumission d'un brouillon par son auteur et reprise d'un article refusé : actions dédiées, états de chargement, gestion des erreurs et possibilité de réessayer, mise à jour du détail et invalidation du cache de la liste personnelle. Après reprise, le motif de refus reste visible.
 - Suppression d'un brouillon personnel avec confirmation et possibilité d'annuler. Requête `DELETE` authentifiée, gestion des erreurs et nouvelle tentative, actualisation du cache et retour à la liste après succès.
+- Espace rédacteur en chef `/editor` : liste paginée des articles soumis avec titre, chapô, rubrique, auteur et statut. Gestion du chargement, de la liste vide, des erreurs et nouvelle tentative après échec. Accès protégé par `ROLE_EDITOR`.
 - Appels API centralisés dans `front/src/api/articles.ts` et `front/src/api/auth.ts`. Les autorisations réelles restent vérifiées par Symfony, même si le front masque les actions interdites.
 
 ## Installation et démarrage
@@ -109,6 +110,7 @@ Pour arrêter : `Ctrl+C` dans le terminal Vite, puis `docker compose down` à la
 Exemple : `GET /api/articles?status=published&title=article&order%5BpublishedAt%5D=desc`.
 
 Les filtres ne contournent jamais les droits d'accès. La liste personnelle du journaliste utilise son identifiant comme filtre `author`, transmet le JWT et n'impose aucun statut.
+La liste du rédacteur en chef utilise `GET /api/articles?status=submitted&page=1` avec un JWT. Le filtrage des articles reste appliqué côté Symfony.
 
 ### Comptes de démonstration
 
@@ -155,7 +157,7 @@ npm run build
 npm run lint
 ```
 
-**Résultat documenté : 43 tests réussis dans 8 fichiers**, avec Vitest et React Testing Library. Ils vérifient la liste publique, la pagination, les filtres, le détail et les `404`, la connexion et les rôles, l'expiration JWT, la liste personnelle, la création, la modification, la soumission, la reprise et la suppression des brouillons, les erreurs `422`, les confirmations, l'annulation et la cohérence du cache. Les appels API sont simulés : ces tests ne nécessitent pas Symfony ni la base PostgreSQL. Compilation TypeScript et lint vérifiés.
+**Résultat documenté : 48 tests réussis dans 9 fichiers**, avec Vitest et React Testing Library. Ils couvrent les listes et détails publics, les filtres, la pagination, l'authentification, les rôles, la gestion des articles du journaliste et la liste des articles soumis au rédacteur en chef (affichage, pagination, liste vide, erreurs `404` et `422` ainsi qu'une nouvelle tentative). Les appels API sont simulés. Compilation TypeScript et ESLint vérifiés.
 
 **Vérifications manuelles effectuées :** consultation publique, filtres, tri et détail ; récupération après erreur API ; liste et pagination des deux journalistes ; création d'un brouillon avec retour à la liste ; détail personnel, modification préremplie, confirmation et contenu mis à jour. Le proxy `/api/articles` a également été vérifié sans authentification.
 
@@ -169,8 +171,8 @@ npm run lint
 
 ## Limites et prochaines étapes
 
-- La soumission, la reprise et la suppressionsont disponibles côté front. La publication et le refus restent à intégrer à l'espace rédacteur en chef.
-- L'espace rédacteur en chef est encore provisoire : développer sa liste des articles soumis, leur consultation et modification, la publication et le refus avec motif, ainsi que la gestion des rubriques dans l'interface.
+- La liste des articles soumis est disponible dans l'espace rédacteur en chef. Il reste à développer leur consultation détaillée, leur modification, leur publication et leur refus avec motif.
+- Ajouter la gestion des rubriques dans l'interface du rédacteur en chef et compléter les tests correspondants.
 - Compléter les tests API (notamment création, modification, validations et permissions) et front ; améliorer formulaires et navigation.
 - La session n'est pas persistée après rechargement (pas de refresh token). Le serveur PHP intégré et le proxy Vite sont destinés au développement.
 - Vérifier l'installation depuis un clone vierge et actualiser l'audit npm.
